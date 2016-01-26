@@ -1,0 +1,8 @@
+[package]
+name = "fsg"
+version = "0.1.0"
+authors = ["Liam <liamzdenek@gmail.com>"]
+
+[dependencies]
+engine = { path = "./lib/engine" }
+sdl2 = "0.12"
