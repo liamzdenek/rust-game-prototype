@@ -1,0 +1,14 @@
+[package]
+name = "tick"
+version = "0.0.1"
+authors = [""]
+
+[lib]
+name = "tick"
+path = "lib.rs"
+
+[dependencies.common]
+path = "../common"
+
+[dependencies.tick_traits]
+path = "../tick_traits"

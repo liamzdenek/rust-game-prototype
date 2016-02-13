@@ -1,0 +1,11 @@
+[package]
+name = "common"
+version = "0.0.1"
+authors = [""]
+
+[lib]
+name = "common"
+path = "lib.rs"
+
+[dependencies]
+rustc-serialize = "0.3.16"

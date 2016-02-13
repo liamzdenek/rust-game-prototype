@@ -1,0 +1,27 @@
+[package]
+name = "engine"
+version = "0.0.1"
+authors = [""]
+
+[lib]
+name = "engine"
+path = "lib.rs"
+
+[dependencies]
+sdl2 = "0.12"
+time = "0.1"
+
+[dependencies.common]
+path = "../common"
+
+[dependencies.storage_traits]
+path = "../storage_traits"
+
+[dependencies.storage]
+path = "../storage"
+
+[dependencies.tick_traits]
+path = "../tick_traits"
+
+[dependencies.tick]
+path = "../tick"

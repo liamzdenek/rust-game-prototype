@@ -1,0 +1,17 @@
+[package]
+name = "storage"
+version = "0.0.1"
+authors = [""]
+
+[lib]
+name = "storage"
+path = "lib.rs"
+
+[dependencies]
+rustc-serialize = "0.3.16"
+
+[dependencies.common]
+path = "../common"
+
+[dependencies.storage_traits]
+path = "../storage_traits"
