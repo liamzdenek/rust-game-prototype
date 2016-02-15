@@ -13,5 +13,8 @@ rustc-serialize = "0.3.16"
 [dependencies.common]
 path = "../common"
 
+[dependencies.tick_traits]
+path = "../tick_traits"
+
 [dependencies.storage_traits]
 path = "../storage_traits"

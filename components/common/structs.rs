@@ -6,8 +6,11 @@ pub struct Cell {
     pub is_structure_center: bool,
 }
 
+pub type EntityId = u64;
+
 #[derive(Debug,Eq,PartialEq,Hash,Clone)]
 pub struct EntityData {
+    pub id: EntityId,
     pub pos: Position,
     pub kind: String,
     pub data: String,

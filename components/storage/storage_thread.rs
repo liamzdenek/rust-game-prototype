@@ -143,6 +143,7 @@ impl StorageManager {
                 StorageThreadMsg::GetAllEntities(sender) => {
                     sender.send(vec![
                         EntityData{
+                            id: 1,
                             pos: Position{ x: 0, y: 0 },
                             kind: "human".to_string(),
                             data: "{}".to_string(),

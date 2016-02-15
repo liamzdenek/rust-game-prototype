@@ -1,7 +1,10 @@
-use std::sync::mpsc::{channel,Sender,Receiver};
+use std::sync::mpsc::{channel,Sender,Receiver,RecvError};
+use std::result;
 use std::thread;
 use tick_traits::tick_thread::*;
 use common::select2;
+use timer;
+
 
 pub trait TickThreadFactory {
     fn new() -> Self;
@@ -19,41 +22,58 @@ impl TickThreadFactory for TickThread {
 
 struct TickManager {
     rx: Receiver<TickThreadMsg>,
+    timer: Receiver<()>,
+    clients: Vec<Sender<TickThreadEvent>>,
 }
 
 impl TickManager {
     fn new(rx: Receiver<TickThreadMsg>) -> TickManager {
         TickManager{
             rx: rx,
+            timer: timer::periodic_ms(1000),
+            clients: vec![],
         }
+    }
+
+
+    // return = should exit
+    fn handle_msg(&mut self, msg: result::Result<TickThreadMsg,RecvError>) -> bool {
+        if msg.is_err() {
+            return true;
+        }
+        match msg.unwrap() {
+            TickThreadMsg::Register(tx) => {
+                self.register(tx);
+            },
+            TickThreadMsg::Exit => {
+                return true;
+            }
+        }
+        return false;
     }
 
     fn start(&mut self) {
         loop {
-            let mut omsg: Option<_> = None;
             select2!{
                 tmsg = self.rx => {
-                    omsg = Some(tmsg);
-                }
+                    if self.handle_msg(tmsg) { return; }
+                },
+                msg = self.timer => {
+                    self.emit(TickThreadEvent::Tick);
+                },
             };
-           
-            if let Some(msg) = omsg {
-                if msg.is_err() {
-                    return;
-                }
-                match msg.unwrap() {
-                    TickThreadMsg::Register(tx) => {
-                        self.register(tx);
-                    }
-                    TickThreadMsg::Exit => {
-                        return;
-                    }
-                }
-            }
+        }
+    }
+
+    fn emit(&mut self, msg: TickThreadEvent) {
+        println!("emitting tick");
+        for client in self.clients.iter() {
+            client.send(msg.clone());
         }
     }
 
     fn register(&mut self, tx: Sender<TickThreadEvent>) {
-
+        println!("got register client");
+        self.clients.push(tx);
     }
 }

@@ -1,8 +1,7 @@
 use std::sync::mpsc::{channel,Sender,Receiver};
 use std::result;
 use common::{Position,Cell};
-
-pub type EntityId = u64;
+use super::entity_thread::Entity;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -21,6 +20,7 @@ pub enum EnvironmentThreadMsg {
     Exit,
 }
 
+#[derive(Clone)]
 pub struct Environment {
     thread: EnvironmentThread,
 }
@@ -33,12 +33,3 @@ impl Environment {
     }
 }
 
-pub enum EntityThreadMsg {
-    SetContext(EntityId, Environment),
-    Exit,
-}
-
-
-pub struct Entity {
-    tx: Sender<EntityThreadMsg>
-}

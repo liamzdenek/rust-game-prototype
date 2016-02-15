@@ -5,7 +5,6 @@ pub enum ChanError {
     SendError(&'static str),
     RecvError(&'static str),
 }
-
 #[macro_export]
 macro_rules! send {
     ($sender:expr, $path:path => ( $($arg:expr),* )) => {{

@@ -3,6 +3,8 @@ use storage_traits::storage_thread::{Storage};
 use storage_traits::environment_thread::{Environment};
 use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
+use tick_traits::tick_thread::Tick;
+use tick::tick_thread::TickThreadFactory;
 
 use sdl2;
 use sdl2::event::{Event,WindowEventId};
@@ -17,6 +19,7 @@ pub struct Engine {
     viewport: Viewport,
     environment: Environment,
     storage: Storage,
+    tick: Tick,
     window_size: (u32, u32),
     tile_size: u32,
     last_frame: time::Tm, 
@@ -26,9 +29,11 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let storage = Storage::new(StorageThreadFactory::new());
+        let tick = Tick::new(TickThreadFactory::new());
         Engine {
             storage: storage.clone(),
-            environment: Environment::new(EnvironmentThreadFactory::new(storage)),
+            tick: tick.clone(),
+            environment: Environment::new(EnvironmentThreadFactory::new(storage, tick)),
             viewport: Viewport::default(),
             window_size: (640,480),
             tile_size: 100,

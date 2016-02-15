@@ -1,38 +1,41 @@
 #![feature(mspc_select)]
 
-macro_rules! as_expr { ($x:expr) => ($x) }
-
 #[macro_export]
-macro_rules! select_internal {
-    (
+macro_rules! select2 {
+    (@internal
         [$($parsed:tt)*]
         $name:pat = $handle:expr => $code:expr, 
         $($rest:tt)*
     ) => ({
-        select_internal!([$($parsed)* rx $name = $handle => $code,]
+        select2!(@internal [$($parsed)* rx rx2 $name = $handle => $code,]
                          $($rest)*)
     });
     
-    (
+    (@internal
         [$($parsed:tt)*]
         $name:pat = $handle:expr => $code:expr
     ) => ({
-        select_internal!([$($parsed)* rx $name = $handle => $code,])
+        select2!([$($parsed)* rx rx2 $name = $handle => $code,])
     });
 
-    ([$($rx:ident $name:pat = $handle:expr => $code:expr,)*]) => ({
-        use std::sync::mpsc::Select;
-        let sel = Select::new();
-        $( let mut $rx = sel.handle(&$handle); )+
-        unsafe {
-            $( $rx.add(); )+
+    (@internal
+        [$($rx:ident $output:ident $name:pat = $handle:expr => $code:expr,)*]
+    ) => ({
+        $( let mut $output = None; )+
+        {
+            use std::sync::mpsc::Select;
+            let sel = Select::new();
+            $( let mut $rx = sel.handle(&$handle); )+
+            unsafe {
+                $( $rx.add(); )+
+            }
+            let ret = sel.wait();
+            $( if ret == $rx.id() { $output = Some($rx.recv()); } )+ 
         }
-        let ret = sel.wait();
-        $( if ret == $rx.id() { let $name = $rx.recv(); $code } else )+
+        $( if let Some($name) = $output { $code } else )+
         { unreachable!() }
     });
+    
+    ($($args:tt)*) => ( select2!(@internal [] $($args)* ) );
 }
-#[macro_export]
-macro_rules! select2 {
-    ($($args:tt)*) => ( select_internal!([] $($args)* ) )
-}
+

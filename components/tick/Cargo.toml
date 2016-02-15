@@ -7,6 +7,9 @@ authors = [""]
 name = "tick"
 path = "lib.rs"
 
+[dependencies.schedule_recv]
+git = "https://github.com/PeterReid/schedule_recv"
+
 [dependencies.common]
 path = "../common"
 
