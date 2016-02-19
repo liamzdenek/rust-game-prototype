@@ -138,7 +138,20 @@ impl Engine {
             }
             Ok(())
         });
-                
+        
+        self.environment.get_entities_by_area(start_tile.clone(), end_tile.clone()).and_then(|vec| {
+            renderer.set_draw_color(sdl2::pixels::Color::RGB(238, 108, 0));
+            for ent in vec {
+                let border_rect = Rect::new(
+                    (((ent.pos.x - 1) - start_tile.x) * tile_size as i64) as i32 - x_pixels as i32,
+                    (((ent.pos.y - 1) - start_tile.y) * tile_size as i64) as i32 - y_pixels as i32,
+                    tile_size,
+                    tile_size,
+                ).unwrap().unwrap();
+                let _ = renderer.fill_rect(border_rect);
+            }
+            Ok(())
+        });
 
         renderer.present();
     }

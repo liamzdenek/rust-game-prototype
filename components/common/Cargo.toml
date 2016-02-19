@@ -9,3 +9,6 @@ path = "lib.rs"
 
 [dependencies]
 rustc-serialize = "0.3.16"
+
+[dependencies.schedule_recv]
+git = "https://github.com/PeterReid/schedule_recv"

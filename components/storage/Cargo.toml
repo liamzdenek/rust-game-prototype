@@ -9,6 +9,7 @@ path = "lib.rs"
 
 [dependencies]
 rustc-serialize = "0.3.16"
+rand = "0.3"
 
 [dependencies.common]
 path = "../common"

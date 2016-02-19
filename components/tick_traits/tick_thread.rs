@@ -8,12 +8,14 @@ pub type TickClient = Receiver<TickThreadEvent>;
 
 pub enum TickThreadMsg {
     Register(Sender<TickThreadEvent>),
+    Constrain(Receiver<()>),
     Exit
 }
 
 #[derive(Clone)]
 pub enum TickThreadEvent {
-    Tick
+    Tick,
+    Exit,
 }
 
 #[derive(Debug)]
@@ -48,5 +50,11 @@ impl Tick {
         let (tx, rx) = channel();
         try!(send!(self.thread, TickThreadMsg::Register => (tx)));
         Ok(rx)
+    }
+
+    pub fn init_constraint(&self) -> Result<Sender<()>> {
+        let (tx, rx) = channel();
+        try!(send!(self.thread, TickThreadMsg::Constrain => (rx)));
+        Ok(tx)
     }
 }

@@ -4,6 +4,7 @@ extern crate tick_traits;
 extern crate storage_traits;
 #[macro_use]
 extern crate common;
+extern crate rand;
 
 pub mod storage_thread;
 pub mod entity_thread;

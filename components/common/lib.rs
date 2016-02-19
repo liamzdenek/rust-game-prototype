@@ -1,4 +1,5 @@
 extern crate rustc_serialize;
+extern crate schedule_recv;
 
 pub mod structs;
 pub mod select2;

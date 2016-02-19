@@ -24,6 +24,7 @@ struct TickManager {
     rx: Receiver<TickThreadMsg>,
     timer: Receiver<()>,
     clients: Vec<Sender<TickThreadEvent>>,
+    constraint: Option<Receiver<()>>,
 }
 
 impl TickManager {
@@ -32,16 +33,17 @@ impl TickManager {
             rx: rx,
             timer: timer::periodic_ms(1000),
             clients: vec![],
+            constraint: None,
         }
     }
 
 
     // return = should exit
     fn handle_msg(&mut self, msg: result::Result<TickThreadMsg,RecvError>) -> bool {
-        if msg.is_err() {
-            return true;
-        }
-        match msg.unwrap() {
+        match msg.unwrap_or(TickThreadMsg::Exit) {
+            TickThreadMsg::Constrain(rx) => {
+                self.constraint = Some(rx);
+            }
             TickThreadMsg::Register(tx) => {
                 self.register(tx);
             },
@@ -66,10 +68,18 @@ impl TickManager {
     }
 
     fn emit(&mut self, msg: TickThreadEvent) {
-        println!("emitting tick");
+        //println!("emitting tick");
         for client in self.clients.iter() {
             client.send(msg.clone());
         }
+        let is_err = self.constraint.as_ref().and_then(|rx| {
+            //println!("waiting on constraint to emit next tick");
+            Some(rx.recv().is_err())
+        }).unwrap_or(false);
+        if is_err {
+            //println!("constraint expired, unbinding");
+            self.constraint = None;
+        };
     }
 
     fn register(&mut self, tx: Sender<TickThreadEvent>) {

@@ -1,4 +1,16 @@
 #![feature(mspc_select)]
+pub use schedule_recv::oneshot_ms;
+
+#[macro_export]
+macro_rules! select2_timeout {
+    ($time_ms:expr => $code:expr, $($args:tt)*) => ({
+        let timeout_rx = $crate::select2::oneshot_ms($time_ms);
+        select2!(
+            _ = timeout_rx => $code,
+            $($args)*
+        )
+    });
+}
 
 #[macro_export]
 macro_rules! select2 {

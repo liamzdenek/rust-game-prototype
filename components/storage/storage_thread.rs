@@ -37,8 +37,8 @@ impl DefaultMapFactory {
 impl GridFactory for DefaultMapFactory {
     fn gen(&mut self, grid_key: GridKey, size: (u64, u64)) -> StorageGridData {
         let mut data = StorageGridData::default();
-        for t_x in (0..size.0) {
-            for t_y in (0..size.1) {
+        for t_x in 0..size.0 {
+            for t_y in 0..size.1 {
                 let mut t_cell = Cell{
                     terrain: "dirt".to_string(),
                     ground: "".to_string(),
