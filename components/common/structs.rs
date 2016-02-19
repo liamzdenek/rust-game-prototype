@@ -16,6 +16,7 @@ pub enum EntityDataMutation {
 #[derive(Debug,Eq,PartialEq,Hash,Clone)]
 pub struct EntityData {
     pub id: EntityId,
+    pub last_pos: Position,
     pub pos: Position,
     pub kind: String,
     pub data: String,
@@ -26,6 +27,7 @@ impl EntityData {
         for change in changes.into_iter() {
             match change {
                 EntityDataMutation::UpdatePosition(position) => {
+                    self.last_pos = self.pos.clone();
                     self.pos = position;
                 }
             }

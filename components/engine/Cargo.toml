@@ -11,6 +11,9 @@ path = "lib.rs"
 sdl2 = "0.12"
 time = "0.1"
 
+[dependencies.ui]
+path = "../ui"
+
 [dependencies.common]
 path = "../common"
 

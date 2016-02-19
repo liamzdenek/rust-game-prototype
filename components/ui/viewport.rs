@@ -1,8 +1,9 @@
+#[derive(Clone)]
 pub struct Viewport {
-    x: i64,
-    y: i64,
-    tile_size: i64,
-    zoom: f64,
+    pub x: i64,
+    pub y: i64,
+    pub tile_size: i64,
+    pub zoom: f64,
 }
 
 impl Default for Viewport {
@@ -28,8 +29,8 @@ impl Viewport {
             tile_size as u32,
             self.x / self.tile_size as i64,
             self.y / self.tile_size as i64,
-            (self.x % self.tile_size as i64) / self.zoom as i64,
-            (self.y % self.tile_size as i64) / self.zoom as i64,
+            ((self.x % self.tile_size) as f64 / self.zoom) as i64,
+            ((self.y % self.tile_size) as f64 / self.zoom) as i64,
         )
     }
 }

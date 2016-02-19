@@ -9,6 +9,7 @@ pub type TickClient = Receiver<TickThreadEvent>;
 pub enum TickThreadMsg {
     Register(Sender<TickThreadEvent>),
     Constrain(Receiver<()>),
+    GetTickLength(Sender<u32>), // ms
     Exit
 }
 
@@ -56,5 +57,10 @@ impl Tick {
         let (tx, rx) = channel();
         try!(send!(self.thread, TickThreadMsg::Constrain => (rx)));
         Ok(tx)
+    }
+
+    pub fn get_tick_length(&self) -> Result<u32> {
+        let res = try!(req_rep!(self.thread, TickThreadMsg::GetTickLength => ()));
+        Ok(res)
     }
 }

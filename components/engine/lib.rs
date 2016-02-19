@@ -5,8 +5,8 @@ extern crate tick;
 extern crate tick_traits;
 extern crate sdl2;
 extern crate time;
+extern crate ui;
 
-pub mod viewport;
 pub mod engine;
 
 pub use engine::Engine;

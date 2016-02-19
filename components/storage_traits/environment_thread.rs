@@ -27,6 +27,7 @@ impl From<ChanError> for Error {
 pub struct LocalEntityData {
     pub id: EntityId,
     pub pos: Position,
+    pub last_pos: Position,
     pub ent: Entity,
 }
 

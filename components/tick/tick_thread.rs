@@ -23,6 +23,7 @@ impl TickThreadFactory for TickThread {
 struct TickManager {
     rx: Receiver<TickThreadMsg>,
     timer: Receiver<()>,
+    tick_avg: u32,
     clients: Vec<Sender<TickThreadEvent>>,
     constraint: Option<Receiver<()>>,
 }
@@ -31,7 +32,8 @@ impl TickManager {
     fn new(rx: Receiver<TickThreadMsg>) -> TickManager {
         TickManager{
             rx: rx,
-            timer: timer::periodic_ms(1000),
+            tick_avg: 500,
+            timer: timer::periodic_ms(500),
             clients: vec![],
             constraint: None,
         }
@@ -46,6 +48,9 @@ impl TickManager {
             }
             TickThreadMsg::Register(tx) => {
                 self.register(tx);
+            },
+            TickThreadMsg::GetTickLength(tx) => {
+                tx.send(self.tick_avg);
             },
             TickThreadMsg::Exit => {
                 return true;

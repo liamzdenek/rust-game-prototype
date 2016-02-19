@@ -145,6 +145,7 @@ impl StorageManager {
                         EntityData{
                             id: 1,
                             pos: Position{ x: 0, y: 0 },
+                            last_pos: Position{ x: 0, y: 0},
                             kind: "human".to_string(),
                             data: "{}".to_string(),
                         },

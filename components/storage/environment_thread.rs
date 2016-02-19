@@ -42,7 +42,9 @@ impl EnvironmentState {
                     if let Some(tent) = conflict {
                         output.push((id, vec![EntityThreadNews::LastTickEventFailed]));
                     } else {
-                        self.entities.iter_mut().find(|tent| tent.id == id).unwrap().pos = position.clone().to_owned();
+                        let updating = self.entities.iter_mut().find(|tent| tent.id == id).unwrap();
+                        updating.last_pos = updating.pos.clone();
+                        updating.pos = position.clone().to_owned();
                         output.push((id, vec![
                             EntityThreadNews::UpdateEntityData(vec![
                                 EntityDataMutation::UpdatePosition(position.clone().to_owned())
@@ -90,7 +92,8 @@ impl EnvironmentManager {
             let ent_data = LocalEntityData{
                 id: ent.id,
                 ent: tent,
-                pos: ent.pos,
+                pos: ent.pos.clone(),
+                last_pos: ent.pos,
             };
             self.state.entities.push(ent_data);
         }
