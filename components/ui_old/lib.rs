@@ -7,20 +7,14 @@ extern crate rand;
 extern crate sdl2;
 extern crate time;
 
-pub use std::rc::{Rc,Weak};
-pub use std::cell::RefCell;
-
-pub mod frame;
-pub use frame::*;
-
-pub mod windowmanager;
-pub use windowmanager::*;
-
-pub mod window;
-pub use window::*;
-
+pub mod viewframe;
 pub mod mapframe;
-pub use mapframe::*;
-
 pub mod viewport;
+pub mod windowmanager;
+pub mod windowframe;
+
+pub use viewframe::*;
+pub use mapframe::*;
 pub use viewport::*;
+pub use windowmanager::*;
+pub use windowframe::*;

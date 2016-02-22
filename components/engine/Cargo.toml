@@ -8,7 +8,7 @@ name = "engine"
 path = "lib.rs"
 
 [dependencies]
-sdl2 = "0.12"
+sdl2 = "0.15"
 time = "0.1"
 
 [dependencies.ui]

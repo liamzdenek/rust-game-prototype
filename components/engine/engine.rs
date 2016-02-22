@@ -5,7 +5,7 @@ use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
 use tick_traits::tick_thread::Tick;
 use tick::tick_thread::TickThreadFactory;
-use ui::{Mapframe,Viewframe,WindowManager,Windowframe};
+use ui::{Mapframe,RootFrame,RootManager,Window,Frame,UIRect,RenderRegion,Manager};
 
 use sdl2;
 use sdl2::event::{Event,WindowEventId};
@@ -38,51 +38,54 @@ impl Engine {
         // Create a window
         let window  = match video_ctx.window("eg03", 1920, 1080).position_centered().opengl().build() {
             Ok(window) => window,
-            Err(err)   => panic!("failed to create window: {}", err)
+            Err(err)   => panic!("failed to create window: {:?}", err)
         };
 
         // Create a rendering context
         let mut renderer = match window.renderer().accelerated().build() {
             Ok(renderer) => renderer,
-            Err(err) => panic!("failed to create renderer: {}", err)
+            Err(err) => panic!("failed to create renderer: {:?}", err)
         };
 
+        let mut rootman = RootManager::new();
         let mut mapframe = Mapframe::new(self.storage.clone(), self.environment.clone());
-
-        let mut winman = WindowManager::new(Box::new(mapframe.clone()));
+       
+        let background_frame = mapframe.clone();
 
         mapframe.viewport.zoom = 10.0;
+        let window = rootman.create_window(Box::new(mapframe));
+        
+        let mut rootframe = RootFrame::new(
+            rootman.push_frame(
+                RenderRegion::new(UIRect::default(), Box::new(background_frame)),
+            )
+        );
 
-        winman.push_window(Windowframe::new(Box::new(mapframe)));
+        rootframe.push_window(window);
 
         let mut events = ctx.event_pump().unwrap();
         'mainloop : loop {
             for event in events.poll_iter() {
+
                 match event {
+                    // todo: have the quit handled by the inner loop
                     Event::Quit{..} => break 'mainloop,
-                    Event::Window{win_event_id, data1, data2, ..}  => {
-                        match win_event_id {
-                            WindowEventId::Resized | WindowEventId::SizeChanged | WindowEventId::Maximized => {
-                                //self.window_size = (data1 as u32, data2 as u32);
-                            }
-                            _ => {}
-                        }
-                    }
-                    Event::MouseMotion{mousestate, xrel, yrel, ..} => {
-                        if mousestate.left() {
-                            //self.viewport.add(-xrel, -yrel);
-                        }
-                    }
-                    _               => {
-                        println!("Got event: {:?}",  event);
-                        continue
+                    _ => {
+                        rootframe.handle_event(event);
                     }
                 }
             }
 
             renderer.set_draw_color(sdl2::pixels::Color::RGB(0,0,0));
             renderer.clear();
-            winman.render(&mut renderer);
+            let size = renderer.window().unwrap().size();
+            let size = UIRect{
+                x: 0,
+                y: 0,
+                w: size.0,
+                h: size.1,
+            };
+            rootframe.begin_render(&mut rootman, &mut renderer);
             renderer.present();
 
         } 

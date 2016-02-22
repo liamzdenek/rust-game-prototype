@@ -8,7 +8,7 @@ name = "ui"
 path = "lib.rs"
 
 [dependencies]
-sdl2 = "0.15"
+sdl2 = "0.12"
 rustc-serialize = "0.3.16"
 rand = "0.3"
 time = "0.1"
