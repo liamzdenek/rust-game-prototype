@@ -1,9 +1,13 @@
 use super::*;
 use sdl2::render::Renderer;
 use sdl2::rect::Rect;
+use sdl2::event::Event;
 use std::convert::From;
 
+pub type WindowId = i32;
+
 pub struct Window {
+    pub id: WindowId,
     pub no_border: bool,
     pub title: String,
     pub content: FrameId,
@@ -11,8 +15,9 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(content: FrameId) -> Self {
+    pub fn new(id: WindowId, content: FrameId) -> Self {
         Window{
+            id: id,
             no_border: false,
             title: "Untitled Window".to_string(),
             content: content,
@@ -71,5 +76,9 @@ impl Frame for Window {
                 (inner_rect, self.content)
             ]
         }
+    }
+
+    fn handle_event(&mut self, event: Event) {
+
     }
 }

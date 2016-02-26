@@ -101,9 +101,14 @@ impl Frame for Mapframe {
         vec![]
     }
 
-    /*
     fn handle_event(&mut self, ev: Event) {
-        println!("MAPFRAME Got event: {:?}",  ev);
+        match ev {
+            Event::MouseMotion{mousestate, xrel, yrel, ..} => {
+                if mousestate.left() {
+                    self.viewport.add(-xrel, -yrel);
+                }
+            },
+            _ => {},
+        }
     }
-    */
 }

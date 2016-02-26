@@ -33,6 +33,15 @@ pub struct UIRect {
     pub h: u32,
 }
 
+impl UIRect {
+    pub fn contains(&self, x: i32, y: i32) -> bool {
+        self.x < x &&
+        self.y < y &&
+        self.x + self.w as i32 > x &&
+        self.y + self.h as i32 > y
+    }
+}
+
 impl Into<Rect> for UIRect {
     fn into(self) -> Rect {
         Rect::new(self.x,self.y,self.w,self.h)
@@ -52,12 +61,12 @@ impl From<Rect> for UIRect {
 
 pub trait Frame {
     fn render(&mut self, &mut Manager, UIRect, &mut Renderer) -> Vec<(UIRect, FrameId)>;
-    //fn handle_event(&mut self, Event); 
+    fn handle_event(&mut self, Event); 
 }
 
 pub trait Manager {
     fn push_frame(&mut self, RenderRegion) -> FrameId;
-    fn borrow_frame_by_id(&mut self, usize) -> Option<&mut RenderRegion>;
-    fn take_frame_by_id(&mut self, usize) -> Option<RenderRegion>;
+    fn borrow_frame_by_id(&mut self, FrameId) -> Option<&mut RenderRegion>;
+    fn take_frame_by_id(&mut self, FrameId) -> Option<RenderRegion>;
 }
 

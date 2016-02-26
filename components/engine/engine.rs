@@ -71,7 +71,7 @@ impl Engine {
                     // todo: have the quit handled by the inner loop
                     Event::Quit{..} => break 'mainloop,
                     _ => {
-                        rootframe.handle_event(event);
+                        rootframe.handle_event(&mut rootman, event);
                     }
                 }
             }
