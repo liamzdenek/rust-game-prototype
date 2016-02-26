@@ -2,6 +2,7 @@ use super::*;
 use sdl2::render::Renderer;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
+use sdl2::mouse::Mouse;
 use std::convert::From;
 
 pub type WindowId = i32;
@@ -12,6 +13,13 @@ pub struct Window {
     pub title: String,
     pub content: FrameId,
     pub size: UIRect,
+    pub cur_manipulation: WindowManipulationKind,
+}
+
+pub enum WindowManipulationKind {
+    Move,
+    Resize,
+    None,
 }
 
 impl Window {
@@ -22,6 +30,7 @@ impl Window {
             title: "Untitled Window".to_string(),
             content: content,
             size: UIRect{x: 30, y: 30, w: 380, h: 175},
+            cur_manipulation: WindowManipulationKind::None,
         }
     }
 
@@ -35,6 +44,14 @@ impl Window {
         );
 
         (menu_size, border_size, window_rect)
+    }
+
+    pub fn get_menu_rect(&self) -> Rect {
+        let (menu_size, border_size, mut window_rect) = self.get_window_details();
+
+        window_rect.set_height(menu_size+border_size);
+
+        window_rect
     }
 
     pub fn contains(&self, x: u32, y: u32) -> bool {
@@ -79,6 +96,33 @@ impl Frame for Window {
     }
 
     fn handle_event(&mut self, event: Event) {
-
+        match event {
+            Event::MouseButtonDown{x,y,mouse_btn,..} => {
+                if mouse_btn == Mouse::Left {
+                    let menu_rect = self.get_menu_rect();
+                    self.cur_manipulation = if menu_rect.contains((x,y)) {
+                        WindowManipulationKind::Move
+                    } else {
+                        WindowManipulationKind::Resize
+                    }
+                }
+            },
+            Event::MouseMotion{xrel,yrel,mousestate,..} => {
+                if mousestate.left() {
+                    match self.cur_manipulation {
+                        WindowManipulationKind::Move => {
+                            self.size.x += xrel;
+                            self.size.y += yrel;
+                        },
+                        WindowManipulationKind::Resize => {
+                            self.size.w = ((self.size.w as i32) + xrel) as u32;
+                            self.size.h = ((self.size.h as i32) + yrel) as u32;
+                        }
+                        _ => {},
+                    }
+                }
+            },
+            _ => {},
+        }
     }
 }

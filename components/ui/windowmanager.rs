@@ -17,6 +17,7 @@ pub struct RootFrame {
     windows: Vec<Window>,
     lookup_table: Vec<RegionLookupKind>,
     current_bound: StoredBound,
+    last_mouse_pos: (i32, i32),
 }
 
 pub struct RootManager {
@@ -107,6 +108,7 @@ impl RootFrame {
             windows: vec![],
             lookup_table: vec![],
             current_bound: StoredBound::None,
+            last_mouse_pos: (0,0),
         }
     }
 
@@ -133,6 +135,10 @@ impl RootFrame {
             Event::MouseButtonDown{x,y,..} => self.route_event(manager, (x,y), event, Calculate(Bind)),
             Event::MouseButtonUp{x,y,..} => self.route_event(manager, (x,y), event, Calculate(Unbind)),
             Event::MouseMotion{x,y,..} => self.route_event(manager, (x,y), event, Calculate(Unmodified)),
+            Event::MouseWheel{..} => {
+                let pos = self.last_mouse_pos.clone();
+                self.route_event(manager, pos, event, Calculate(Unmodified))
+            },
             _ => {
                 println!("unhandled event: {:?}", event);
             }
@@ -170,6 +176,8 @@ impl RootFrame {
 
     pub fn handle_bind(&mut self, manager: &mut Manager, rect: UIRect, point: (i32, i32), behavior: &EventBindBehavior, new_bound: StoredBound,event:&Event) -> bool{
         let mut was_handled = false;
+
+        self.last_mouse_pos = point;
 
         use EventBindBehavior::*;
         if let &Bind = behavior {

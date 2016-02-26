@@ -108,6 +108,14 @@ impl Frame for Mapframe {
                     self.viewport.add(-xrel, -yrel);
                 }
             },
+            Event::MouseWheel{y,..} => {
+                self.viewport.zoom += y as f64 * -0.4;
+                if self.viewport.zoom < 1.0 {
+                    self.viewport.zoom = 1.0;
+                } else if self.viewport.zoom > 5.0 {
+                    self.viewport.zoom = 5.0;
+                }
+            },
             _ => {},
         }
     }
