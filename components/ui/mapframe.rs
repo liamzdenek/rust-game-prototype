@@ -4,7 +4,7 @@ use storage_traits::storage_thread::Storage;
 use storage_traits::environment_thread::Environment;
 
 use sdl2::surface::Surface;
-use sdl2::render::Renderer;
+//use sdl2::render::Renderer;
 use sdl2::rect::{Rect};
 use sdl2::event::Event;
 
@@ -65,9 +65,9 @@ impl Frame for Mapframe {
             for (t_pos, cell) in vec {
                 cell.and_then(|cell| {
                     if cell.terrain == "sand" {
-                        renderer.set_draw_color(sdl2::pixels::Color::RGB(255,255,170));
+                        renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(255,255,170));
                     } else {
-                        renderer.set_draw_color(sdl2::pixels::Color::RGB(85,41,0));
+                        renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(85,41,0));
                     }
                     
                     let border_rect = Rect::new(
@@ -77,7 +77,7 @@ impl Frame for Mapframe {
                         tile_size,
                     );
                     //println!("drawing rect: {:?}", border_rect);
-                    let _ = renderer.fill_rect(border_rect);
+                    let _ = renderer.sdl.fill_rect(border_rect);
                     Ok(())
                 });
             }
@@ -85,7 +85,7 @@ impl Frame for Mapframe {
         });
         
         self.environment.get_entities_by_area(start_tile.clone(), end_tile.clone()).and_then(|vec| {
-            renderer.set_draw_color(sdl2::pixels::Color::RGB(238, 108, 0));
+            renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(238, 108, 0));
             for ent in vec {
                 let border_rect = Rect::new(
                     -recenter.0 + (((ent.pos.x - 1) - start_tile.x) * tile_size as i64) as i32 - x_pixels as i32,
@@ -93,7 +93,7 @@ impl Frame for Mapframe {
                     tile_size,
                     tile_size,
                 );
-                let _ = renderer.fill_rect(border_rect);
+                let _ = renderer.sdl.fill_rect(border_rect);
             }
             Ok(())
         });

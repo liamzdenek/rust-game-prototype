@@ -1,5 +1,5 @@
 use super::*;
-use sdl2::render::Renderer;
+//use sdl2::render::Renderer;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 
@@ -113,9 +113,9 @@ impl RootFrame {
     }
 
     fn get_full_rect(&mut self, renderer: &mut Renderer) -> UIRect {
-        let full_size = if let Some(window) = renderer.window() {
+        let full_size = if let Some(window) = renderer.sdl.window() {
             window.drawable_size()
-        } else if let Some(surface) = renderer.surface() {
+        } else if let Some(surface) = renderer.sdl.surface() {
             surface.size()
         } else {
             unreachable!{}
@@ -261,7 +261,7 @@ impl RootFrame {
                 Some(WorkKind::Window(window_id)) => {
                     if let Some(window) = self.borrow_window(window_id) {
                         let size = window.size.clone();
-                        renderer.set_viewport(Some(size.clone().into()));
+                        renderer.sdl.set_viewport(Some(size.clone().into()));
                         (size.clone(), RegionLookupKind::Window(size.clone(), window_id), window.render(manager, size, renderer))
                     } else {
                         (UIRect::default(), RegionLookupKind::None, vec![])
@@ -270,7 +270,7 @@ impl RootFrame {
                 Some(WorkKind::Frame(rect, frame_id)) => {
                     match manager.take_frame_by_id(frame_id) {
                         Some(mut frame) => {
-                            renderer.set_viewport(Some(rect.clone().into()));
+                            renderer.sdl.set_viewport(Some(rect.clone().into()));
                             let mut sent_rect = rect.clone();
                             sent_rect.x = 0;
                             sent_rect.y = 0;
@@ -299,7 +299,7 @@ impl RootFrame {
         }
 
         self.lookup_table = lookup_table;
-        renderer.set_viewport(None);
+        renderer.sdl.set_viewport(None);
     }
 }
 

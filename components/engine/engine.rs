@@ -5,7 +5,7 @@ use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
 use tick_traits::tick_thread::Tick;
 use tick::tick_thread::TickThreadFactory;
-use ui::{Mapframe,RootFrame,RootManager,Window,Frame,UIRect,RenderRegion,Manager};
+use ui::{Mapframe,RootFrame,RootManager,Window,Frame,UIRect,RenderRegion,Manager,Renderer as UiRenderer};
 
 use sdl2;
 use sdl2::event::{Event,WindowEventId};
@@ -63,6 +63,10 @@ impl Engine {
 
         rootframe.push_window(window);
 
+        let mut renderer = UiRenderer{
+            sdl: renderer,
+        };
+
         let mut events = ctx.event_pump().unwrap();
         'mainloop : loop {
             for event in events.poll_iter() {
@@ -76,9 +80,10 @@ impl Engine {
                 }
             }
 
-            renderer.set_draw_color(sdl2::pixels::Color::RGB(0,0,0));
-            renderer.clear();
-            let size = renderer.window().unwrap().size();
+            
+            renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(0,0,0));
+            renderer.sdl.clear();
+            let size = renderer.sdl.window().unwrap().size();
             let size = UIRect{
                 x: 0,
                 y: 0,
@@ -86,7 +91,7 @@ impl Engine {
                 h: size.1,
             };
             rootframe.begin_render(&mut rootman, &mut renderer);
-            renderer.present();
+            renderer.sdl.present();
 
         } 
     }

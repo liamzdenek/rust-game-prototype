@@ -1,5 +1,4 @@
 use super::*;
-use sdl2::render::Renderer;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use sdl2::mouse::Mouse;
@@ -77,8 +76,8 @@ impl Frame for Window {
             //println!("got window rect: {:?}", window_rect);
 
             //renderer.set_viewport(Some(window_rect));
-            renderer.set_draw_color(sdl2::pixels::Color::RGB(46,65,114));
-            renderer.fill_rect(
+            renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(46,65,114));
+            renderer.sdl.fill_rect(
                 Rect::new(0,0,window_rect.width(),window_rect.height()),
             );
 
