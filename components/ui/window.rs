@@ -3,6 +3,8 @@ use sdl2::rect::Rect;
 use sdl2::event::Event;
 use sdl2::mouse::Mouse;
 use std::convert::From;
+use std::cmp;
+use sdl2::pixels::Color;
 
 pub type WindowId = i32;
 
@@ -13,6 +15,8 @@ pub struct Window {
     pub content: FrameId,
     pub size: UIRect,
     pub cur_manipulation: WindowManipulationKind,
+    pub min_width: u32,
+    pub min_height: u32,
 }
 
 pub enum WindowManipulationKind {
@@ -29,6 +33,8 @@ impl Window {
             title: "Untitled Window".to_string(),
             content: content,
             size: UIRect{x: 30, y: 30, w: 380, h: 175},
+            min_width: 380,
+            min_height: 175,
             cur_manipulation: WindowManipulationKind::None,
         }
     }
@@ -77,9 +83,23 @@ impl Frame for Window {
 
             //renderer.set_viewport(Some(window_rect));
             renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(46,65,114));
+
             renderer.sdl.fill_rect(
                 Rect::new(0,0,window_rect.width(),window_rect.height()),
             );
+            
+            let title_surf = &renderer.borrow_font("menu".to_string(), 64).unwrap().render(self.title.as_str())
+                .blended(sdl2::pixels::Color::RGBA(255, 255, 255, 255)).unwrap();
+            let mut title_texture = renderer.sdl.create_texture_from_surface(title_surf).unwrap();
+
+            let out_rect = get_scaled_rect(window_rect.width(), menu_size, Rect::new(
+                border_size as i32,
+                border_size as i32,
+                title_texture.query().width,
+                title_texture.query().height,
+            ));
+
+            renderer.sdl.copy(&mut title_texture, None, Some(out_rect));
 
             let inner_rect = UIRect{
                 x: border_size as i32,
@@ -114,8 +134,8 @@ impl Frame for Window {
                             self.size.y += yrel;
                         },
                         WindowManipulationKind::Resize => {
-                            self.size.w = ((self.size.w as i32) + xrel) as u32;
-                            self.size.h = ((self.size.h as i32) + yrel) as u32;
+                            self.size.w = cmp::max(self.min_width, ((self.size.w as i32) + xrel) as u32);
+                            self.size.h = cmp::max(self.min_height, ((self.size.h as i32) + yrel) as u32);
                         }
                         _ => {},
                     }
@@ -124,4 +144,23 @@ impl Frame for Window {
             _ => {},
         }
     }
+}
+
+fn get_scaled_rect(dst_width: u32, dst_height: u32, src: Rect) -> Rect {
+    let mut src = src;
+    let scale_a = dst_width as f64/src.width() as f64;
+    let scale_b = dst_height as f64/src.height() as f64;
+
+    let scale = if scale_a < scale_b {
+        scale_a
+    }  else {
+        scale_b
+    };
+
+    let new_w = src.width() as f64 * scale;
+    let new_h = src.height() as f64 * scale;
+    src.set_width(new_w as u32);
+    src.set_height(new_h as u32);
+
+    src
 }

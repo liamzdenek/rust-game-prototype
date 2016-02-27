@@ -1,5 +1,4 @@
 use super::*;
-use sdl2::render::Renderer as SdlRenderer;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 
@@ -7,9 +6,6 @@ use std::convert::From;
 
 pub type FrameId = usize;
 
-pub struct Renderer<'a> {
-    pub sdl: SdlRenderer<'a>,
-}
 
 pub struct RenderRegion {
     pub id: Option<FrameId>,

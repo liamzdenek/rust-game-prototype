@@ -8,10 +8,12 @@ use tick::tick_thread::TickThreadFactory;
 use ui::{Mapframe,RootFrame,RootManager,Window,Frame,UIRect,RenderRegion,Manager,Renderer as UiRenderer};
 
 use sdl2;
+use sdl2_ttf;
 use sdl2::event::{Event,WindowEventId};
 use sdl2::render::Renderer;
 use common::Position;
 use time;
+
 
 pub struct Engine {
     environment: Environment,
@@ -63,9 +65,9 @@ impl Engine {
 
         rootframe.push_window(window);
 
-        let mut renderer = UiRenderer{
-            sdl: renderer,
-        };
+        let mut renderer = UiRenderer::new(renderer, sdl2_ttf::init().unwrap());
+
+        renderer.load_font("menu".to_string(), "assets/fonts/OpenSans-Regular.ttf".to_string(), 64);
 
         let mut events = ctx.event_pump().unwrap();
         'mainloop : loop {

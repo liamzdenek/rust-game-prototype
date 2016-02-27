@@ -13,6 +13,9 @@ rustc-serialize = "0.3.16"
 rand = "0.3"
 time = "0.1"
 
+[dependencies.sdl2_ttf]
+path = "../../libs/rust-sdl2_ttf"
+
 [dependencies.common]
 path = "../common"
 

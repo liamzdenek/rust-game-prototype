@@ -11,6 +11,9 @@ path = "lib.rs"
 sdl2 = "0.15"
 time = "0.1"
 
+[dependencies.sdl2_ttf]
+path = "../../libs/rust-sdl2_ttf"
+
 [dependencies.ui]
 path = "../ui"
 
