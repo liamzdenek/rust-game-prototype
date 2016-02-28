@@ -16,7 +16,7 @@ pub struct RenderRegion {
 }
 
 impl RenderRegion {
-    pub fn new(rect: UIRect, frame: Box<Frame>) -> Self {
+    pub fn new(frame: Box<Frame>) -> Self {
         RenderRegion{
             id: None,
             viewport: None,

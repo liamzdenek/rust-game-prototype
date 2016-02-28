@@ -2,12 +2,11 @@ use super::*;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use sdl2::mouse::Mouse;
-use std::convert::From;
 use std::cmp;
-use sdl2::pixels::Color;
 
 pub type WindowId = i32;
 
+#[derive(Clone)]
 pub struct Window {
     pub id: WindowId,
     pub no_border: bool,
@@ -19,9 +18,11 @@ pub struct Window {
     pub min_height: u32,
 }
 
+#[derive(Clone)]
 pub enum WindowManipulationKind {
     Move,
     Resize,
+    Close,
     None,
 }
 
@@ -39,7 +40,7 @@ impl Window {
         }
     }
 
-    pub fn get_window_details(&self) -> (u32, u32, Rect) {
+    pub fn get_window_details(&self) -> (u32, u32, Rect, Rect) {
         let menu_size = 25;
         let border_size = 4;
         let window_rect = Rect::new(
@@ -48,11 +49,14 @@ impl Window {
             self.size.h,
         );
 
-        (menu_size, border_size, window_rect)
+
+        let close_rect = Rect::new((window_rect.width()-menu_size) as i32, 0, menu_size, menu_size);
+
+        (menu_size, border_size, window_rect, close_rect)
     }
 
     pub fn get_menu_rect(&self) -> Rect {
-        let (menu_size, border_size, mut window_rect) = self.get_window_details();
+        let (menu_size, border_size, mut window_rect, _) = self.get_window_details();
 
         window_rect.set_height(menu_size+border_size);
 
@@ -60,7 +64,7 @@ impl Window {
     }
 
     pub fn contains(&self, x: u32, y: u32) -> bool {
-        let (_, _, window_rect) = self.get_window_details();
+        let (_, _, window_rect, _) = self.get_window_details();
         window_rect.x() <= x as i32 &&
         window_rect.y() <= y as i32 &&
         window_rect.x() + window_rect.width() as i32 >= x  as i32&&
@@ -70,6 +74,7 @@ impl Window {
 
 impl Frame for Window {
     fn render(&mut self, manager: &mut Manager, size: UIRect, renderer: &mut Renderer) -> Vec<(UIRect, FrameId)> {
+        let _ = manager; // make unused var warning shut up
         self.size = size.clone();
         if self.no_border {
             //renderer.set_viewport(Some(Rect::new(30,30,700,700).unwrap().unwrap()));
@@ -77,17 +82,24 @@ impl Frame for Window {
                 (size, self.content)
             ]
         } else {
-            let (menu_size, border_size, window_rect) = self.get_window_details();
+            let (menu_size, border_size, window_rect, close_rect) = self.get_window_details();
 
-            //println!("got window rect: {:?}", window_rect);
-
-            //renderer.set_viewport(Some(window_rect));
+            // draw background
             renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(46,65,114));
-
             renderer.sdl.fill_rect(
                 Rect::new(0,0,window_rect.width(),window_rect.height()),
-            );
+            ).unwrap();
+
+            // draw border
+            renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(0,0,0));
+            renderer.sdl.draw_rect(
+                Rect::new(0,0,window_rect.width(),window_rect.height()),
+            ).unwrap();
+
+            // draw close button
+            renderer.sdl.draw_rect(close_rect).unwrap();
             
+            // draw title
             let title_surf = &renderer.borrow_font("menu".to_string(), 64).unwrap().render(self.title.as_str())
                 .blended(sdl2::pixels::Color::RGBA(255, 255, 255, 255)).unwrap();
             let mut title_texture = renderer.sdl.create_texture_from_surface(title_surf).unwrap();
@@ -101,6 +113,7 @@ impl Frame for Window {
 
             renderer.sdl.copy(&mut title_texture, None, Some(out_rect));
 
+            // send back info on rendering the contents
             let inner_rect = UIRect{
                 x: border_size as i32,
                 y: (border_size+ menu_size) as i32,
@@ -119,9 +132,21 @@ impl Frame for Window {
             Event::MouseButtonDown{x,y,mouse_btn,..} => {
                 if mouse_btn == Mouse::Left {
                     let menu_rect = self.get_menu_rect();
-                    self.cur_manipulation = if menu_rect.contains((x,y)) {
+                    let (_,_,window_rect,mut close_rect) = self.get_window_details();
+                    let new_x = close_rect.x() + window_rect.x();
+                    let new_y = close_rect.y() + window_rect.y();
+                    close_rect.set_x(new_x);
+                    close_rect.set_y(new_y);
+                    println!("close rect: {:?}", close_rect);
+                    println!("menu rect: {:?}", menu_rect);
+                    self.cur_manipulation = if close_rect.contains((x,y)) {
+                        println!("setting manipulation to close");
+                        WindowManipulationKind::Close
+                    } else if menu_rect.contains((x,y)) {
+                        println!("setting manipulation to move");
                         WindowManipulationKind::Move
                     } else {
+                        println!("setting manipulation to resize");
                         WindowManipulationKind::Resize
                     }
                 }

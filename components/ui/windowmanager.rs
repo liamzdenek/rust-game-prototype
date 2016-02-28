@@ -1,6 +1,5 @@
 use super::*;
 //use sdl2::render::Renderer;
-use sdl2::rect::Rect;
 use sdl2::event::Event;
 
 use std::collections::VecDeque;
@@ -64,13 +63,7 @@ impl RootManager {
 
 impl RootManager {
     pub fn create_window(&mut self, frame: Box<Frame>) -> Window {
-        let rect = UIRect{
-            x: 30,
-            y: 30,
-            w: 380,
-            h: 175,
-        };
-        let frame_id = self.push_frame(RenderRegion::new(rect, frame));
+        let frame_id = self.push_frame(RenderRegion::new(frame));
         self.next_window_id += 1;
         Window::new(self.next_window_id-1, frame_id)
     }
@@ -93,7 +86,7 @@ impl Manager for RootManager {
         self.frames.iter_mut().find(|frame| frame.id == Some(id))
     }
     fn take_frame_by_id(&mut self, id: FrameId) -> Option<RenderRegion> {
-        self.frames.iter().enumerate().find(|&(i, frame)| frame.id == Some(id))
+        self.frames.iter().enumerate().find(|&(_, frame)| frame.id == Some(id))
             .and_then(|(i, _)| Some(i))
             .and_then(|i| Some(self.frames.swap_remove(i)))
     }
@@ -229,6 +222,13 @@ impl RootFrame {
         self.windows.iter_mut().find(|window| { window.id == id })
     }
 
+    pub fn destroy_window(&mut self, id: WindowId) {
+        let windows = self.windows.clone();
+        if let Some((i, _)) = windows.iter().enumerate().find(|&(_, window)| window.id == id) {
+            self.windows.swap_remove(i);
+        }
+    }
+
     pub fn begin_render(&mut self, manager: &mut Manager, renderer: &mut Renderer) {
         let full_size = self.get_full_rect(renderer);
         //println!("FULL RECT: {:?}", full_size);
@@ -259,13 +259,18 @@ impl RootFrame {
                     (full_size.clone(), RegionLookupKind::Root, self.root.render(manager, full_size.clone(), renderer))
                 },
                 Some(WorkKind::Window(window_id)) => {
-                    if let Some(window) = self.borrow_window(window_id) {
+                    let (ret, cur_manip) = if let Some(window) = self.borrow_window(window_id) {
                         let size = window.size.clone();
                         renderer.sdl.set_viewport(Some(size.clone().into()));
-                        (size.clone(), RegionLookupKind::Window(size.clone(), window_id), window.render(manager, size, renderer))
+                        let ret = (size.clone(), RegionLookupKind::Window(size.clone(), window_id), window.render(manager, size, renderer));
+                        (ret, window.cur_manipulation.clone())
                     } else {
-                        (UIRect::default(), RegionLookupKind::None, vec![])
+                        ((UIRect::default(), RegionLookupKind::None, vec![]), WindowManipulationKind::None)
+                    };
+                    if let WindowManipulationKind::Close = cur_manip {
+                        self.destroy_window(window_id);
                     }
+                    ret
                 },
                 Some(WorkKind::Frame(rect, frame_id)) => {
                     match manager.take_frame_by_id(frame_id) {

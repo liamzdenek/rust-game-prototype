@@ -1,6 +1,6 @@
 [package]
-name = "fsg"
-version = "0.0.1"
+name = "mars-colony"
+version = "0.0.2"
 authors = ["Liam <liamzdenek@gmail.com>"]
 
 [dependencies]

@@ -5,20 +5,17 @@ use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
 use tick_traits::tick_thread::Tick;
 use tick::tick_thread::TickThreadFactory;
-use ui::{Mapframe,RootFrame,RootManager,Window,Frame,UIRect,RenderRegion,Manager,Renderer as UiRenderer};
+use ui::{Mapframe,RootFrame,RootManager,Frame,RenderRegion,Manager,Renderer as UiRenderer};
 
 use sdl2;
 use sdl2_ttf;
-use sdl2::event::{Event,WindowEventId};
-use sdl2::render::Renderer;
-use common::Position;
-use time;
+use sdl2::event::{Event};
 
 
 pub struct Engine {
-    environment: Environment,
-    storage: Storage,
-    tick: Tick,
+    pub environment: Environment,
+    pub storage: Storage,
+    pub tick: Tick,
 }
 
 impl Engine {
@@ -44,7 +41,7 @@ impl Engine {
         };
 
         // Create a rendering context
-        let mut renderer = match window.renderer().accelerated().build() {
+        let renderer = match window.renderer().accelerated().build() {
             Ok(renderer) => renderer,
             Err(err) => panic!("failed to create renderer: {:?}", err)
         };
@@ -59,7 +56,7 @@ impl Engine {
         
         let mut rootframe = RootFrame::new(
             rootman.push_frame(
-                RenderRegion::new(UIRect::default(), Box::new(background_frame)),
+                RenderRegion::new(Box::new(background_frame)),
             )
         );
 
@@ -85,13 +82,6 @@ impl Engine {
             
             renderer.sdl.set_draw_color(sdl2::pixels::Color::RGB(0,0,0));
             renderer.sdl.clear();
-            let size = renderer.sdl.window().unwrap().size();
-            let size = UIRect{
-                x: 0,
-                y: 0,
-                w: size.0,
-                h: size.1,
-            };
             rootframe.begin_render(&mut rootman, &mut renderer);
             renderer.sdl.present();
 
