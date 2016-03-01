@@ -5,7 +5,7 @@ use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
 use tick_traits::tick_thread::Tick;
 use tick::tick_thread::TickThreadFactory;
-use ui::{Mapframe,RootFrame,RootManager,Frame,RenderRegion,Manager,Renderer as UiRenderer};
+use ui::{Mapframe,RootFrame,RootManager,Frame,RenderRegion,Manager,Renderer as UiRenderer,ButtonKind,ButtonMenu,Splitter,SplitterEntry,Button,PrintBroadcaster,StoredButton};
 
 use sdl2;
 use sdl2_ttf;
@@ -49,15 +49,29 @@ impl Engine {
         let mut rootman = RootManager::new();
         let mut mapframe = Mapframe::new(self.storage.clone(), self.environment.clone());
        
-        let background_frame = mapframe.clone();
+
+        let mut background_frame = Splitter::new(vec![
+            SplitterEntry::Static(
+                rootman.push_frame(RenderRegion::new(Box::new(ButtonMenu::new(vec![
+                    ButtonKind::Button(StoredButton::Button(Button::new(Box::new(PrintBroadcaster::new("ONE".to_string()))))),
+                    ButtonKind::Button(StoredButton::Button(Button::new(Box::new(PrintBroadcaster::new("TWO".to_string()))))),
+                    ButtonKind::Spacer(30),
+                    ButtonKind::Button(StoredButton::Button(Button::new(Box::new(PrintBroadcaster::new("THREE".to_string()))))),
+                ])))), 75
+
+            ),
+            SplitterEntry::Dynamic(
+                rootman.push_frame(RenderRegion::new(Box::new(mapframe.clone())))
+            ),
+        ]);
+
+        background_frame.is_vert = true;
 
         mapframe.viewport.zoom = 10.0;
         let window = rootman.create_window(Box::new(mapframe));
         
         let mut rootframe = RootFrame::new(
-            rootman.push_frame(
-                RenderRegion::new(Box::new(background_frame)),
-            )
+            rootman.push_frame(RenderRegion::new(Box::new(background_frame)))
         );
 
         rootframe.push_window(window);

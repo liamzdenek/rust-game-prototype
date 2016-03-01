@@ -44,8 +44,8 @@ impl Frame for Mapframe {
         //println!("x{} y{} xpx{} ypx{}", x_tile, y_tile, x_pixels, y_pixels);
 
         let max_tiles = (
-            (window_size.w / tile_size) as i64 + 4,
-            (window_size.h / tile_size) as i64 + 4,
+            (window_size.w / tile_size) as i64 + 6,
+            (window_size.h / tile_size) as i64 + 6,
         );
 
         let start_tile = Position{

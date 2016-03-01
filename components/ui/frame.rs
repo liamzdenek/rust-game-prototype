@@ -3,6 +3,7 @@ use sdl2::rect::Rect;
 use sdl2::event::Event;
 
 use std::convert::From;
+use std::any::Any;
 
 pub type FrameId = usize;
 
@@ -34,6 +35,15 @@ pub struct UIRect {
 }
 
 impl UIRect {
+    pub fn new(x: i32, y: i32, w: u32, h: u32) -> Self {
+        UIRect{
+            x: x,
+            y: y,
+            w: w,
+            h: h,
+        }
+    }
+    
     pub fn contains(&self, x: i32, y: i32) -> bool {
         self.x < x &&
         self.y < y &&

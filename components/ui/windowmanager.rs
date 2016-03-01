@@ -3,6 +3,8 @@ use super::*;
 use sdl2::event::Event;
 
 use std::collections::VecDeque;
+
+use std::any::Any;
 /*
 a window must be able to:
  draw itself

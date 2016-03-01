@@ -137,16 +137,13 @@ impl Frame for Window {
                     let new_y = close_rect.y() + window_rect.y();
                     close_rect.set_x(new_x);
                     close_rect.set_y(new_y);
-                    println!("close rect: {:?}", close_rect);
-                    println!("menu rect: {:?}", menu_rect);
+                    //println!("close rect: {:?}", close_rect);
+                    //println!("menu rect: {:?}", menu_rect);
                     self.cur_manipulation = if close_rect.contains((x,y)) {
-                        println!("setting manipulation to close");
                         WindowManipulationKind::Close
                     } else if menu_rect.contains((x,y)) {
-                        println!("setting manipulation to move");
                         WindowManipulationKind::Move
                     } else {
-                        println!("setting manipulation to resize");
                         WindowManipulationKind::Resize
                     }
                 }
