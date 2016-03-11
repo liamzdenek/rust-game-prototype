@@ -51,7 +51,7 @@ impl GridFactory for DefaultMapFactory {
                     grid_key.x * size.0 as i64 + t_x as i64,
                     grid_key.y * size.1 as i64 + t_y as i64,
                 );
-                if ((real_x as f64)/30.0).sin() * ((real_y as f64)/30.0).cos() > 0.2  {
+                if real_x % 10 == 0 && real_y % 10 == 0 || real_x == 0 || real_y == 0  {
                     t_cell.terrain = "sand".to_string();
                 }
                 data.set_cell(CellKey{x: t_x, y: t_y}, t_cell);

@@ -1,42 +1,24 @@
-extern crate rustc_serialize;
-extern crate tick_traits;
-extern crate storage_traits;
 #[macro_use]
 extern crate common;
-extern crate rand;
-extern crate sdl2;
+#[macro_use]
+extern crate imgui;
+#[macro_use]
+extern crate glium;
 extern crate time;
-extern crate sdl2_ttf;
 
-pub use std::rc::{Rc,Weak};
-pub use std::cell::RefCell;
+pub use glium::Frame; 
+pub use glium::Surface;
+pub use glium::backend::Facade;
+pub use glium::Program;
 
-pub mod renderer;
-pub use renderer::*;
+pub mod ui;
+pub use ui::*;
 
-pub mod frame;
-pub use frame::*;
+pub mod support;
+pub use support::*;
 
-pub mod windowmanager;
-pub use windowmanager::*;
-
-pub mod window;
-pub use window::*;
-
-pub mod mapframe;
-pub use mapframe::*;
+pub mod map;
+pub use map::*;
 
 pub mod viewport;
 pub use viewport::*;
-
-pub mod buttonmenu;
-pub use buttonmenu::*;
-
-pub mod splitter;
-pub use splitter::*;
-
-pub mod button;
-pub use button::*;
-
-pub mod broadcaster;
-pub use broadcaster::*;
