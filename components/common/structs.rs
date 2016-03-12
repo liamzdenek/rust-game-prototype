@@ -49,6 +49,15 @@ impl Position {
     }
 }
 
+impl From<(i32, i32)> for Position {
+    fn from(i: (i32, i32)) -> Position {
+        Position{
+            x: i.0 as i64,
+            y: i.1 as i64,
+        }
+    }
+}
+
 #[derive(Eq,PartialEq,Hash,Clone)]
 pub struct GridKey {
     pub x: i64,

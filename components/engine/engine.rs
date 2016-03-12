@@ -5,7 +5,7 @@ use storage::storage_thread::StorageThreadFactory;
 use storage::environment_thread::EnvironmentThreadFactory;
 use tick_traits::tick_thread::Tick;
 use tick::tick_thread::TickThreadFactory;
-use ui::{UI};
+use ui::{UI,MapBuilder};
 //use ui::{Mapframe,RootFrame,RootManager,Frame,RenderRegion,Manager,Renderer as UiRenderer,ButtonKind,ButtonMenu,Splitter,SplitterEntry,Button,PrintBroadcaster,StoredButton,WindowFactory};
 
 
@@ -29,7 +29,7 @@ impl Engine {
     pub fn run(&mut self) {
        
         let mut ui = UI::new();
-        ui.run();
+        ui.run(Box::new(MapBuilder::new(self.storage.clone(), self.environment.clone())));
         /*
         let mut events = ctx.event_pump().unwrap();
         'mainloop : loop {

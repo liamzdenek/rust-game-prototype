@@ -6,6 +6,11 @@ pub trait Renderer {
     fn render(&mut self, display: &mut GlutinFacade, frame: &mut Frame);
 }
 
+pub trait RendererBuilder {
+    type O;
+    fn build(&mut self, display: &mut GlutinFacade) -> Self::O;
+}
+
 pub struct AppData {
     pub background: Box<Renderer>
 }
@@ -24,9 +29,10 @@ impl UI {
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run<T: Renderer + 'static>(&mut self, mut root: Box<RendererBuilder<O=T>>) {
+        let built = root.build(&mut self.support.display);
         let mut app_data = AppData{
-            background: Box::new(Map::new(&self.support.display)),
+            background: Box::new(built),
         };
         let mut open = true;
         'mainloop: loop {
@@ -39,7 +45,6 @@ impl UI {
                     .resizable(false)
                     .build(|| {
                         ui.text(im_str!("Hello world!"));
-                        ui.tree_node(im_str!("ayy lmao"));
                         ui.text(im_str!("This...is...imgui-rs!"));
                         ui.separator();
                         let mouse_pos = ui.imgui().mouse_pos();

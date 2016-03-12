@@ -21,6 +21,7 @@ pub struct Support {
 impl Support {
     pub fn init() -> Support {
         let display = glutin::WindowBuilder::new()
+            .with_dimensions(1920,1080)
             .build_glium()
             .unwrap();
 
@@ -87,6 +88,7 @@ impl Support {
     }
 
     pub fn update_events(&mut self) -> bool {
+        //println!("want capture mouse: {:?}", self.imgui.frame().want_capture_mouse());
         for event in self.display.poll_events() {
             match event {
                 Event::Closed => return false,

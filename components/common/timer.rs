@@ -74,7 +74,7 @@ impl TimerManager {
                 false
             }
             TimerMsgs::EmitFinite(duration, count) => {
-                for _ in (0..count) {
+                for _ in 0..count {
                     thread::sleep(duration);
                     self.etx.send(TimerEvents::Emit);
                     if self.check() { return false; }

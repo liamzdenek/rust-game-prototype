@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate common;
+extern crate tick_traits;
+extern crate storage_traits;
 #[macro_use]
 extern crate imgui;
 #[macro_use]
