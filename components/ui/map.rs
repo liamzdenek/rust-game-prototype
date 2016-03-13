@@ -2,7 +2,7 @@ use super::*;
 use glium::backend::glutin_backend::GlutinFacade;
 use storage_traits::storage_thread::Storage;
 use storage_traits::environment_thread::Environment;
-use glium::glutin::Event;
+use glium::glutin::{Event,ElementState,MouseButton};
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Debug)]
@@ -35,6 +35,11 @@ impl RendererBuilder for MapBuilder {
 
 pub struct Map {
     pub viewport: Viewport,
+
+    mouse_pressed: bool,
+    last_pos: (i32, i32),
+    px_tile_size: u32,
+    
     storage: Storage,
     environment: Environment,
     program: Program,
@@ -88,6 +93,9 @@ impl Map {
             viewport: Viewport::default(),
             storage: storage,
             environment: environment,
+            mouse_pressed: false,
+            px_tile_size: 0,
+            last_pos: (0,0),
         }
     }
 }
@@ -105,8 +113,10 @@ impl Renderer for Map {
         }
         
         let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-        let (ogl_tile_size, ogl_tile_ofs, start_tile, end_tile, focused_tile) = self.viewport.get_render_info(frame.get_dimensions());
+        let (px_tile_size, ogl_tile_size, ogl_tile_ofs, start_tile, end_tile, focused_tile) = self.viewport.get_render_info(frame.get_dimensions());
         
+        self.px_tile_size = px_tile_size;
+
         //println!("RENDER INFO: {:?}", self.viewport.get_render_info(frame.get_dimensions()));
 
         let mut cmds: Vec<DrawCmd> = vec![];
@@ -229,6 +239,25 @@ impl Renderer for Map {
     }
 
     fn handle_events(&mut self, events: Vec<Event>) {
-        println!("got events: {:?}", events);
+        for event in events {
+            match event {
+                Event::MouseInput(state, MouseButton::Left) => {
+                    self.mouse_pressed = state == ElementState::Pressed;
+                }
+                Event::MouseMoved(pos) => {
+                    if self.mouse_pressed {
+                        let delta = (
+                            self.last_pos.0 - pos.0, // no idea why this axis is reversed but whatever, it works
+                            pos.1 - self.last_pos.1,
+                        );
+                        self.viewport.add(delta.0 as f32 / self.px_tile_size as f32, delta.1 as f32 / self.px_tile_size as f32);
+                    }
+                    self.last_pos = pos;
+                }
+                _ => {
+                    // unhandled
+                }
+            }
+        }
     }
 }

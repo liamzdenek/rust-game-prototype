@@ -102,6 +102,7 @@ impl Support {
         let mut ret_events = vec![];
         
         for event in self.display.poll_events() {
+            //TODO: update this to properly differentiate from KB and Mouse inputs
             if !self.want_capture_mouse {
                 ret_events.push(event.clone());
             }
