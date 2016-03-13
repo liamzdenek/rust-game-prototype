@@ -1,8 +1,8 @@
 #[derive(Debug,Clone,Default,Eq,PartialEq,RustcEncodable,RustcDecodable)]
 pub struct Cell {
-    pub terrain: String,
-    pub ground: String,
-    pub structure_id: String,
+    pub terrain: u64,
+    pub ground: u64,
+    pub structure_id: u64,
     pub is_structure_center: bool,
 }
 

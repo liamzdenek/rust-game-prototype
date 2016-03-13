@@ -93,7 +93,7 @@ impl Map {
 impl Renderer for Map {
     fn render(&mut self, display: &mut GlutinFacade, frame: &mut Frame) {
         struct DrawCmd {
-            kind: String,
+            kind: u64,
             vertices: Vec<Vertex>,
         }
         
@@ -107,7 +107,7 @@ impl Renderer for Map {
         self.viewport.x += 0.1;
 
         self.storage.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
-            return Ok(());
+            //return Ok(());
             for (t_pos, cell) in vec {
                 cell.and_then(|cell| {
                     let bounding_points = (
@@ -153,7 +153,7 @@ impl Renderer for Map {
 
         for v in cmds.into_iter() {
             let vertex_buffer = glium::VertexBuffer::new(display, &v.vertices).unwrap();
-            let program = if v.kind == "sand" {
+            let program = if v.kind == 0 {
                 &self.program
             } else {
                 &self.program2

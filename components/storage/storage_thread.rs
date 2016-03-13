@@ -36,13 +36,13 @@ impl DefaultMapFactory {
 
 impl GridFactory for DefaultMapFactory {
     fn gen(&mut self, grid_key: GridKey, size: (u64, u64)) -> StorageGridData {
-        let mut data = StorageGridData::default();
+        let mut data = StorageGridData::new(size);
         for t_x in 0..size.0 {
             for t_y in 0..size.1 {
                 let mut t_cell = Cell{
-                    terrain: "dirt".to_string(),
-                    ground: "".to_string(),
-                    structure_id: "".to_string(),
+                    terrain: 0,
+                    ground: 0,
+                    structure_id: 0,
                     is_structure_center: false,
                 };
 
@@ -52,7 +52,7 @@ impl GridFactory for DefaultMapFactory {
                     grid_key.y * size.1 as i64 + t_y as i64,
                 );
                 if real_x % 10 == 0 && real_y % 10 == 0 || real_x == 0 || real_y == 0  {
-                    t_cell.terrain = "sand".to_string();
+                    t_cell.terrain = 1;
                 }
                 data.set_cell(CellKey{x: t_x, y: t_y}, t_cell);
             }
@@ -90,17 +90,40 @@ impl StoragePrimitive for MemoryStoragePrimitive {
     }
 }
 
-#[derive(Default, RustcEncodable, RustcDecodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 pub struct StorageGridData {
-    data: HashMap<CellKey, Cell>,
+    size: usize,
+    data: Vec<Vec<Cell>>,
 }
 
 impl StorageGridData {
+    fn new(size: (u64, u64)) -> Self {
+        StorageGridData{
+            size: size.1 as usize,
+            data: Vec::with_capacity(size.0 as usize),
+        }
+    }
     fn get_cell(&self, key: CellKey) -> Result<Cell> {
-        Ok(self.data.get(&key).and_then(|cell| Some(cell.clone())).unwrap_or_default())
+        Ok(
+            self.data.get(key.x as usize)
+                .and_then(|row| row.get(key.y as usize))
+                .and_then(|cell| Some(cell.clone()))
+                .unwrap_or_default()
+        )
     }
     fn set_cell(&mut self, key: CellKey, pix: Cell) -> Result<()> {
-        self.data.insert(key, pix);
+        while self.data.len() <= key.x as usize {
+            self.data.push(Vec::with_capacity(self.size));
+        }
+
+        let row = self.data.get_mut(key.x as usize).unwrap();
+
+        while row.len() < key.y as usize {
+            row.push(Cell::default());
+        }
+
+        row.push(pix);
+
         Ok(())
     }
 }
@@ -116,7 +139,7 @@ struct StorageManager {
 impl StorageManager {
     fn new(rx: Receiver<StorageThreadMsg>, storage: Box<StoragePrimitive>) -> StorageManager {
         StorageManager{
-            cell_size: (10, 10),
+            cell_size: (100, 100),
             rx: rx,
             storage: storage,
             loaded: Usage::new(1000),
@@ -159,7 +182,9 @@ impl StorageManager {
     }
 
     fn get_area(&mut self, sender: Sender<Vec<(Position, Result<Cell>)>>, pos_1: Position, pos_2: Position) {
-        let mut ret = vec![];
+        let size = ((pos_2.x - pos_1.x) * (pos_2.y - pos_1.y)) as usize;
+        println!("area size: {:?}", size);
+        let mut ret = Vec::with_capacity(size);
         for t_x in pos_1.x..pos_2.x {
             for t_y in pos_1.y..pos_2.y {
                 let tpos = Position{ x: t_x, y: t_y };
