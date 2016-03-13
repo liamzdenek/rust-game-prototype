@@ -1,9 +1,11 @@
 use super::*;
 use imgui::*;
 use glium::backend::glutin_backend::GlutinFacade;
+use glium::glutin::Event;
 
 pub trait Renderer {
     fn render(&mut self, display: &mut GlutinFacade, frame: &mut Frame);
+    fn handle_events(&mut self, events: Vec<Event>);
 }
 
 pub trait RendererBuilder {
@@ -51,9 +53,10 @@ impl UI {
                         ui.text(im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
                     });
                 ui.show_metrics_window(&mut open);
-                //ui.show_test_window(&mut open);
+                ui.show_test_window(&mut open);
             });
-            let active = self.support.update_events();
+            let (events, active) = self.support.update_events();
+            app_data.background.handle_events(events);
             if !active || !open {
                 break 'mainloop;
             }

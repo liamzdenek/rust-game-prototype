@@ -183,7 +183,7 @@ impl StorageManager {
 
     fn get_area(&mut self, sender: Sender<Vec<(Position, Result<Cell>)>>, pos_1: Position, pos_2: Position) {
         let size = ((pos_2.x - pos_1.x) * (pos_2.y - pos_1.y)) as usize;
-        println!("area size: {:?}", size);
+        //println!("area size: {:?}", size);
         let mut ret = Vec::with_capacity(size);
         for t_x in pos_1.x..pos_2.x {
             for t_y in pos_1.y..pos_2.y {

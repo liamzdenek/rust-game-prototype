@@ -16,6 +16,8 @@ pub struct Support {
     pub mouse_pos: (i32, i32),
     pub mouse_pressed: (bool, bool, bool),
     pub mouse_wheel: f32,
+    pub want_capture_mouse: bool,
+    pub want_capture_kb: bool,
 }
 
 impl Support {
@@ -55,7 +57,9 @@ impl Support {
             last_frame: SteadyTime::now(),
             mouse_pos: (0, 0),
             mouse_pressed: (false, false, false),
-            mouse_wheel: 0.0
+            mouse_wheel: 0.0,
+            want_capture_mouse: false,
+            want_capture_kb: false,
         }
     }
 
@@ -81,17 +85,28 @@ impl Support {
 
         let (width, height) = target.get_dimensions();
         let ui = self.imgui.frame(width, height, delta_f);
+
+        let want_capture_mouse = ui.want_capture_mouse();
+        let want_capture_kb = ui.want_capture_keyboard();
+       
         f(&mut target, &mut self.display, &ui);
         self.renderer.render(&mut target, ui).unwrap();
 
         target.finish().unwrap();
+
+        self.want_capture_mouse = want_capture_mouse;
+        self.want_capture_kb = want_capture_kb;
     }
 
-    pub fn update_events(&mut self) -> bool {
-        //println!("want capture mouse: {:?}", self.imgui.frame().want_capture_mouse());
+    pub fn update_events(&mut self) -> (Vec<Event>, bool) {
+        let mut ret_events = vec![];
+        
         for event in self.display.poll_events() {
+            if !self.want_capture_mouse {
+                ret_events.push(event.clone());
+            }
             match event {
-                Event::Closed => return false,
+                Event::Closed => return (ret_events, false),
                 Event::KeyboardInput(state, _, code) => {
                     let pressed = state == ElementState::Pressed;
                     match code {
@@ -136,6 +151,6 @@ impl Support {
                 _ => ()
             }
         }
-        true
+        (ret_events, true)
     }
 }
