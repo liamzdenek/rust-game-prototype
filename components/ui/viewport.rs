@@ -23,6 +23,27 @@ impl Viewport {
         self.y += (yrel as f32)// * self.zoom);
     }
 
+
+    pub fn get_point_at_cursor(&self, size: (u32, u32), mouse_pos: (i32, i32)) -> (f32, f32) {
+        let (px_tile_size, ogl_tile_size, ogl_start_ofs, start_tile, end_tile, focused_tile) = self.get_render_info(size);
+
+        //focused_tile.0 as f32  
+        (0.0,0.0)
+    }
+
+    pub fn update_zoom(&mut self, direction: f32, size: (u32, u32), mouse_pos: (i32, i32)) {
+        println!("update zoom: {:?} {:?}", direction, mouse_pos);
+
+        println!("point at cursor: {:?}", self.get_point_at_cursor(size, mouse_pos));
+        self.zoom += -direction * 0.2;
+        println!("zoom: {:?}", self.zoom);
+        if self.zoom < 0.2 {
+            self.zoom = 0.2;
+        } else if self.zoom > 5.0 {
+            self.zoom = 5.0;
+        }
+    }
+
     pub fn get_render_info(&self, size: (u32, u32)) -> (u32, (f32, f32), (f32, f32), (i32, i32), (i32, i32), (i32, i32)) {
 
         let viewport_size = 2.0;

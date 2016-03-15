@@ -21,11 +21,7 @@ pub struct Support {
 }
 
 impl Support {
-    pub fn init() -> Support {
-        let display = glutin::WindowBuilder::new()
-            .with_dimensions(1920,1080)
-            .build_glium()
-            .unwrap();
+    pub fn init(display: GlutinFacade) -> Support {
 
         let mut imgui = ImGui::init();
         let renderer = Renderer::init(&mut imgui, &display).unwrap();

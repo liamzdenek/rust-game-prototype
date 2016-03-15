@@ -7,6 +7,7 @@ extern crate imgui;
 #[macro_use]
 extern crate glium;
 extern crate time;
+extern crate image;
 
 pub use glium::Frame; 
 pub use glium::Surface;
@@ -24,3 +25,6 @@ pub use map::*;
 
 pub mod viewport;
 pub use viewport::*;
+
+pub mod texcache;
+pub use texcache::*;

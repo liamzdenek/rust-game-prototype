@@ -1,16 +1,21 @@
 use super::*;
-use glium::backend::glutin_backend::GlutinFacade;
 use storage_traits::storage_thread::Storage;
 use storage_traits::environment_thread::Environment;
-use glium::glutin::{Event,ElementState,MouseButton};
+use glium::backend::glutin_backend::GlutinFacade;
+use glium::glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
+use imgui::ImGui;
+use glium::texture::{ClientFormat, RawImage2d};
+
+use std::borrow::Cow;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     position: [f32;2],
+    tex_coords: [f32;2],
 }
 
-implement_vertex!(Vertex, position);
+implement_vertex!(Vertex, position, tex_coords);
 
 pub struct MapBuilder {
     storage: Storage,
@@ -28,8 +33,8 @@ impl MapBuilder {
 
 impl RendererBuilder for MapBuilder {
     type O = Map;
-    fn build(&mut self, display: &mut GlutinFacade) -> Map {
-        Map::new(display, self.storage.clone(), self.environment.clone())
+    fn build(&mut self, im_gui: &mut ImGui, display: &mut GlutinFacade) -> Map {
+        Map::new(im_gui, display, self.storage.clone(), self.environment.clone())
     }
 }
 
@@ -39,69 +44,31 @@ pub struct Map {
     mouse_pressed: bool,
     last_pos: (i32, i32),
     px_tile_size: u32,
-    
+    window_size: (u32, u32),
+   
     storage: Storage,
     environment: Environment,
-    program: Program,
-    program2: Program,
-    program3: Program,
 }
 
 impl Map {
-    pub fn new<T>(display: &T, storage: Storage, environment: Environment) -> Self
+    pub fn new<T>(im_gui: &mut ImGui, display: &T, storage: Storage, environment: Environment) -> Self
         where T: Facade
     {
-        let vertex_shader_src = r#"
-            #version 140
-            in vec2 position;
-            uniform mat4 matrix;
-            void main() {
-                gl_Position = matrix * vec4(position, 0.0, 1.0);
-            }
-        "#;
-
-        let fragment_shader_src = r#"
-            #version 140
-            out vec4 color;
-            void main() {
-                color = vec4(1.0, 0.0, 0.0, 1.0);
-            }
-        "#;
-
-        let fragment_shader_src2 = r#"
-            #version 140
-            out vec4 color;
-            void main() {
-                color = vec4(0.0, 1.0, 0.0, 1.0);
-            }
-        "#;
-
-        let fragment_shader_src3 = r#"
-            #version 140
-            out vec4 color;
-            void main() {
-                color = vec4(0.0, 0.0, 1.0, 1.0);
-            }
-        "#;
-        let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
-        let program2 = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src2, None).unwrap();
-        let program3 = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src3, None).unwrap();
         Map{
-            program: program,
-            program2: program2,
-            program3: program3,
             viewport: Viewport::default(),
             storage: storage,
             environment: environment,
+            
             mouse_pressed: false,
             px_tile_size: 0,
             last_pos: (0,0),
+            window_size: (0,0),
         }
     }
 }
 
 impl Renderer for Map {
-    fn render(&mut self, display: &mut GlutinFacade, frame: &mut Frame) {
+    fn render(&mut self, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
         #[derive(PartialEq)]
         enum DrawCmdKind {
             Terrain(u64),
@@ -137,13 +104,13 @@ impl Renderer for Map {
                     );
                     let mut new_vert = vec![
                         // bottom left triangle
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1] },
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1] },
+                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1], tex_coords: [0.0, 0.0] },
+                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
                         // top right triangle
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1] },
+                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1], tex_coords: [1.0, 1.0] },
+                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
                     ];
 
                     let mut was_found = false;
@@ -180,13 +147,13 @@ impl Renderer for Map {
                 );
                 let mut new_vert = vec![
                     // bottom left triangle
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1] },
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1] },
+                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1], tex_coords: [0.0, 0.0] },
+                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
                     // top right triangle
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1] },
+                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1], tex_coords: [1.0, 1.0] },
+                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
                 ];
 
                 let mut was_found = false;
@@ -211,31 +178,57 @@ impl Renderer for Map {
 
         for v in cmds.into_iter() {
             let vertex_buffer = glium::VertexBuffer::new(display, &v.vertices).unwrap();
-            let program = match v.kind {
-                DrawCmdKind::Terrain(0) => {
-                    &self.program
-                }
-                DrawCmdKind::Terrain(1) => {
-                    &self.program2
-                }
+            let (program, uniform) = match v.kind {
+                DrawCmdKind::Terrain(kind) => {
+                    let tex = match kind {
+                        0 => {
+                            &texcache.img_gravel
+                        },
+                        1 => {
+                            &texcache.img_sand
+                        },
+                        _ => {
+                            &texcache.img_missing
+                        },
+                    };
+                    
+                    (
+                        &texcache.program,
+                        uniform!{
+                            matrix: [
+                                [1.0,  0.0,  0.0,  0.0],
+                                [0.0,  1.0,  0.0,  0.0],
+                                [0.0,  0.0,  1.0,  0.0],
+                                [0.0,  0.0,  0.0,  1.0f32],
+                            ],
+                            tex: tex,
+                        }
+                    )
+                },
                 DrawCmdKind::Entity(ent_id) => {
-                    &self.program3
+                    let tex = &texcache.img_missing;
+                    (
+                        &texcache.program,
+                        uniform!{
+                            matrix: [
+                                [1.0,  0.0,  0.0,  0.0],
+                                [0.0,  1.0,  0.0,  0.0],
+                                [0.0,  0.0,  1.0,  0.0],
+                                [0.0,  0.0,  0.0,  1.0f32],
+                            ],
+                            tex: tex,
+                        }
+                    )
                 }
-                _ => {
+                /*_ => {
                     &self.program
-                }
-            };
-            let uniforms = uniform!{
-                matrix: [
-                    [1.0,  0.0,  0.0,  0.0],
-                    [0.0,  1.0, 0.0,  0.0],
-                    [0.0,  0.0,  1.0,  0.0],
-                    [0.0,  0.0,  0.0,  1.0f32],
-                ]
+                }*/
             };
 
-            frame.draw(&vertex_buffer, &indices, program, &uniforms, &Default::default()).unwrap();
+            frame.draw(&vertex_buffer, &indices, program, &uniform, &Default::default()).unwrap();
         }
+
+        self.window_size = frame.get_dimensions(); 
     }
 
     fn handle_events(&mut self, events: Vec<Event>) {
@@ -253,6 +246,27 @@ impl Renderer for Map {
                         self.viewport.add(delta.0 as f32 / self.px_tile_size as f32, delta.1 as f32 / self.px_tile_size as f32);
                     }
                     self.last_pos = pos;
+                }
+                Event::MouseWheel(delta) => {
+                    println!("Delta: {:?}", delta);
+                    match delta {
+                        MouseScrollDelta::LineDelta(dx, dy) => {
+                            let direction = if dx != 0.0 {
+                                dx
+                            } else {
+                                dy
+                            };
+                            self.viewport.update_zoom(direction, self.window_size, self.last_pos)
+                        }
+                        MouseScrollDelta::PixelDelta(dx, dy) => {
+                            let direction = if dx != 0.0 {
+                                dx
+                            } else {
+                                dy
+                            };
+                            self.viewport.update_zoom(direction, self.window_size, self.last_pos)
+                        }
+                    }
                 }
                 _ => {
                     // unhandled

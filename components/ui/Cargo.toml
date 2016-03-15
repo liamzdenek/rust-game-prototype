@@ -9,8 +9,9 @@ path = "lib.rs"
 
 [dependencies]
 glium = "0.13"
-imgui = "0.0.6"
 time = "0.1"
+image = "0.7"
+imgui = "0.0.6"
 
 [dependencies.common]
 path = "../common"
