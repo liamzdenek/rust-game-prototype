@@ -1,7 +1,6 @@
 use super::*;
 use storage_traits::storage_thread::Storage;
 use storage_traits::environment_thread::Environment;
-use glium::backend::glutin_backend::GlutinFacade;
 use glium::glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
 use imgui::ImGui;

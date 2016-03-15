@@ -28,6 +28,12 @@ struct TickManager {
     constraint: Option<Receiver<()>>,
 }
 
+enum PausedState {
+    Unchanged,
+    Paused,
+    Unpaused,
+}
+
 impl TickManager {
     fn new(rx: Receiver<TickThreadMsg>) -> TickManager {
         TickManager{
@@ -41,7 +47,8 @@ impl TickManager {
 
 
     // return = should exit
-    fn handle_msg(&mut self, msg: result::Result<TickThreadMsg,RecvError>) -> bool {
+    fn handle_msg(&mut self, msg: result::Result<TickThreadMsg,RecvError>) -> (PausedState, bool) {
+        let mut is_paused = PausedState::Unchanged;
         match msg.unwrap_or(TickThreadMsg::Exit) {
             TickThreadMsg::Constrain(rx) => {
                 self.constraint = Some(rx);
@@ -52,23 +59,60 @@ impl TickManager {
             TickThreadMsg::GetTickLength(tx) => {
                 tx.send(self.tick_avg);
             },
+            TickThreadMsg::SetSpeed(ms) => {
+                if ms == 0 {
+                    is_paused = PausedState::Paused;
+                } else {
+                    is_paused = PausedState::Unpaused;
+                    self.timer = timer::periodic_ms(ms);
+                }
+            },
             TickThreadMsg::Exit => {
-                return true;
+                return (is_paused, true);
             }
         }
-        return false;
+        return (is_paused, false);
     }
 
     fn start(&mut self) {
+        let mut is_paused = false;
         loop {
-            select2!{
-                tmsg = self.rx => {
-                    if self.handle_msg(tmsg) { return; }
-                },
-                msg = self.timer => {
-                    self.emit(TickThreadEvent::Tick);
-                },
-            };
+            if !is_paused {
+                select2!{
+                    tmsg = self.rx => {
+                        let (new_state, do_exit) = self.handle_msg(tmsg);
+
+                        if do_exit {
+                            return;
+                        }
+
+                        match new_state {
+                            PausedState::Unchanged => {},
+                            PausedState::Paused => { is_paused = true; }
+                            PausedState::Unpaused => { is_paused = false; }
+                        }
+                    },
+                    msg = self.timer => {
+                        self.emit(TickThreadEvent::Tick);
+                    },
+                };
+            } else {
+                select2!{
+                    tmsg = self.rx => {
+                        let (new_state, do_exit) = self.handle_msg(tmsg);
+
+                        if do_exit {
+                            return;
+                        }
+
+                        match new_state {
+                            PausedState::Unchanged => {},
+                            PausedState::Paused => { is_paused = true; }
+                            PausedState::Unpaused => { is_paused = false; }
+                        }
+                    },
+                };
+            }
         }
     }
 

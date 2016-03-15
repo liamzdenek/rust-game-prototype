@@ -12,6 +12,7 @@ extern crate image;
 pub use glium::Frame; 
 pub use glium::Surface;
 pub use glium::backend::Facade;
+pub use glium::backend::glutin_backend::GlutinFacade;
 pub use glium::Program;
 
 pub mod ui;
@@ -28,3 +29,6 @@ pub use viewport::*;
 
 pub mod texcache;
 pub use texcache::*;
+
+pub mod timecontrols;
+pub use timecontrols::*;

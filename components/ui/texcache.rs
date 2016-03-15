@@ -1,5 +1,4 @@
 use super::*;
-use glium::backend::glutin_backend::GlutinFacade;
 use glium::texture::texture2d::Texture2d;
 use std::io::Cursor;
 

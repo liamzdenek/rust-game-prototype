@@ -10,6 +10,7 @@ pub enum TickThreadMsg {
     Register(Sender<TickThreadEvent>),
     Constrain(Receiver<()>),
     GetTickLength(Sender<u32>), // ms
+    SetSpeed(u32), // ms
     Exit
 }
 
@@ -52,6 +53,12 @@ impl Tick {
         try!(send!(self.thread, TickThreadMsg::Register => (tx)));
         Ok(rx)
     }
+
+
+    pub fn set_speed(&mut self, ms: u32) -> Result<()> {
+        try!(send!(self.thread, TickThreadMsg::SetSpeed => (ms)));
+        Ok(())
+    }   
 
     pub fn init_constraint(&self) -> Result<Sender<()>> {
         let (tx, rx) = channel();
