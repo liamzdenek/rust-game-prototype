@@ -118,11 +118,11 @@ impl StorageGridData {
 
         let row = self.data.get_mut(key.x as usize).unwrap();
 
-        while row.len() < key.y as usize {
+        while row.len() <= key.y as usize {
             row.push(Cell::default());
         }
 
-        row.push(pix);
+        row[key.y as usize] = pix;
 
         Ok(())
     }
@@ -213,10 +213,16 @@ impl StorageManager {
     }
 
     fn get_keys(&mut self, pos: Position) -> (GridKey, CellKey) {
-        let gridkey = GridKey{
+        let mut gridkey = GridKey{
             x: pos.x/(self.cell_size.0 as i64),
             y: pos.y/(self.cell_size.1 as i64),
         };
+        if pos.x < 0 {
+            gridkey.x -= 1;
+        }
+        if pos.y < 0 {
+            gridkey.y -= 1;
+        }
         let cellkey = CellKey{
             x: (pos.x - (gridkey.x * self.cell_size.0 as i64)).abs() as u64,
             y: (pos.y - (gridkey.y * self.cell_size.1 as i64)).abs() as u64,

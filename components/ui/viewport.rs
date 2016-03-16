@@ -24,19 +24,31 @@ impl Viewport {
     }
 
 
-    pub fn get_point_at_cursor(&self, size: (u32, u32), mouse_pos: (i32, i32)) -> (f32, f32) {
-        let (px_tile_size, ogl_tile_size, ogl_start_ofs, start_tile, end_tile, focused_tile) = self.get_render_info(size);
+    pub fn get_tile_at_cursor(&self, size: (u32, u32), mouse_pos: (i32, i32)) -> (i32, i32) {
+        let (px_tile_size, ogl_tile_size, ogl_tile_ofs, start_tile, end_tile, focused_tile) = self.get_render_info(size);
 
-        //focused_tile.0 as f32  
-        (0.0,0.0)
+        let ogl_mouse_pos = (
+            1.0 - (mouse_pos.0 as f32 / size.0 as f32 * 2.0),
+            1.0 - (mouse_pos.1 as f32 / size.1 as f32 * 2.0),
+        );
+
+        let tile_ofs = (
+            ((ogl_mouse_pos.0 - ogl_tile_ofs.0) / ogl_tile_size.0).floor() as i32,
+            ((ogl_mouse_pos.1 + ogl_tile_ofs.1) / ogl_tile_size.1).floor() as i32,
+        );
+
+        (
+            focused_tile.0 - tile_ofs.0 - 1,
+            focused_tile.1 + tile_ofs.1,
+        )
     }
 
     pub fn update_zoom(&mut self, direction: f32, size: (u32, u32), mouse_pos: (i32, i32)) {
-        println!("update zoom: {:?} {:?}", direction, mouse_pos);
-
-        println!("point at cursor: {:?}", self.get_point_at_cursor(size, mouse_pos));
+        //println!("update zoom: {:?} {:?}", direction, mouse_pos);
+        //println!("window dims: {:?}", size);
+        //println!("point at cursor: {:?}", self.get_tile_at_cursor(size, mouse_pos));
         self.zoom += -direction * 0.2;
-        println!("zoom: {:?}", self.zoom);
+        //println!("zoom: {:?}", self.zoom);
         if self.zoom < 0.2 {
             self.zoom = 0.2;
         } else if self.zoom > 5.0 {
@@ -51,13 +63,13 @@ impl Viewport {
         let px_tile_size = (100.0 / self.zoom) as u32; 
 
         let mut num_tiles = (
-            (size.0 / px_tile_size),
-            (size.1 / px_tile_size),
+            (size.0 as f32 / px_tile_size as f32).ceil() as u32,
+            (size.1 as f32 / px_tile_size as f32).ceil() as u32,
         );
 
         let ogl_tile_size = (
-            viewport_size / num_tiles.0 as f32,
-            viewport_size / num_tiles.1 as f32,
+            viewport_size / (size.0 as f32 / px_tile_size as f32),
+            viewport_size / (size.1 as f32 / px_tile_size as f32),
             //(size.0 as f64 / viewport_size * ( tile_size / self.zoom ) as f64) as f32, 
             //(size.1 as f64 / viewport_size * ( tile_size / self.zoom ) as f64) as f32,
         );
@@ -72,12 +84,12 @@ impl Viewport {
             ogl_tile_size.1 * self.y.fract(),
         );
 
-        // one extra on each side to ensure that theres no blank region around the borders
+        // two extra on each side to ensure that theres no blank region around the borders
         // this cannot be done at the beginning since tile size must be computed without this
         // addition
         num_tiles = (
-            num_tiles.0 + 2,
-            num_tiles.1 + 2,
+            num_tiles.0 + 4,
+            num_tiles.1 + 4,
         );
 
         let start_tile = (

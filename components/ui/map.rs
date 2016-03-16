@@ -83,8 +83,6 @@ impl Renderer for Map {
         
         self.px_tile_size = px_tile_size;
 
-        //println!("RENDER INFO: {:?}", self.viewport.get_render_info(frame.get_dimensions()));
-
         let mut cmds: Vec<DrawCmd> = vec![];
         //self.viewport.x += 0.1;
 
@@ -235,6 +233,13 @@ impl Renderer for Map {
             match event {
                 Event::MouseInput(state, MouseButton::Left) => {
                     self.mouse_pressed = state == ElementState::Pressed;
+                    let tile = self.viewport.get_tile_at_cursor(self.window_size, self.last_pos);
+                    println!("setting tile at: {:?}", tile);
+                    use common::Cell;
+                    self.storage.set_cell(tile.into(), Cell{
+                        terrain: 1,
+                        .. Cell::default()
+                    }).unwrap(); 
                 }
                 Event::MouseMoved(pos) => {
                     if self.mouse_pressed {
