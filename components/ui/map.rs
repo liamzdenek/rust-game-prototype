@@ -16,6 +16,13 @@ pub struct Vertex {
 
 implement_vertex!(Vertex, position, tex_coords);
 
+
+pub enum InputState {
+    None,
+    Input((i32, i32), glium::glutin::ElementState, glium::glutin::MouseButton),
+    Panning,
+}
+
 pub struct MapBuilder {
     storage: Storage,
     environment: Environment,
@@ -40,7 +47,7 @@ impl RendererBuilder for MapBuilder {
 pub struct Map {
     pub viewport: Viewport,
 
-    mouse_pressed: bool,
+    mouse_state: InputState,
     last_pos: (i32, i32),
     px_tile_size: u32,
     window_size: (u32, u32),
@@ -58,11 +65,21 @@ impl Map {
             storage: storage,
             environment: environment,
             
-            mouse_pressed: false,
+            mouse_state: InputState::None,
             px_tile_size: 0,
             last_pos: (0,0),
             window_size: (0,0),
         }
+    }
+
+    pub fn on_click(&mut self) {
+        let tile = self.viewport.get_tile_at_cursor(self.window_size, self.last_pos);
+        println!("setting tile at: {:?}", tile);
+        use common::Cell;
+        self.storage.set_cell(tile.into(), Cell{
+            terrain: 1,
+            .. Cell::default()
+        }).unwrap();
     }
 }
 
@@ -231,18 +248,30 @@ impl Renderer for Map {
     fn handle_events(&mut self, events: Vec<Event>) {
         for event in events {
             match event {
-                Event::MouseInput(state, MouseButton::Left) => {
-                    self.mouse_pressed = state == ElementState::Pressed;
-                    let tile = self.viewport.get_tile_at_cursor(self.window_size, self.last_pos);
-                    println!("setting tile at: {:?}", tile);
-                    use common::Cell;
-                    self.storage.set_cell(tile.into(), Cell{
-                        terrain: 1,
-                        .. Cell::default()
-                    }).unwrap(); 
+                Event::MouseInput(state, button) => {
+                    if let InputState::Input(_, ElementState::Pressed, MouseButton::Left) = self.mouse_state {
+                        if let ElementState::Released = state {
+                            self.on_click();
+                        }
+                    } 
+                    self.mouse_state = InputState::Input(self.last_pos, state, button);
+                 
                 }
                 Event::MouseMoved(pos) => {
-                    if self.mouse_pressed {
+                    let should_pan = if let InputState::Input(start_pos, ElementState::Pressed, MouseButton::Left) = self.mouse_state {
+                        if (start_pos.0 - self.last_pos.0).abs() + (start_pos.1 - self.last_pos.1).abs() > 5 {
+                            self.mouse_state = InputState::Panning;
+                            true
+                        } else {
+                            false
+                        }
+                    } else if let InputState::Panning = self.mouse_state {
+                        true
+                    } else {
+                        false
+                    };
+
+                    if should_pan {
                         let delta = (
                             self.last_pos.0 - pos.0, // no idea why this axis is reversed but whatever, it works
                             pos.1 - self.last_pos.1,
