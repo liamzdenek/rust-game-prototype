@@ -1,4 +1,5 @@
 pub mod human;
+pub mod mapmemory;
 
 use std::sync::mpsc::Sender;
 use common::{Position,EntityId,ChanError,EntityData};

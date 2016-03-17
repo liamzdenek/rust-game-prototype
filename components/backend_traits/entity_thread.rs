@@ -31,7 +31,6 @@ pub enum EntityThreadMsg {
 
 #[derive(Debug)]
 pub enum EntityThreadNews {
-    LastTickEventFailed,
     UpdateEntityData(Vec<EntityDataMutation>),
 }
 

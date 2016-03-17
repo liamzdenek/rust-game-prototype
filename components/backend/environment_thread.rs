@@ -40,7 +40,7 @@ impl EnvironmentState {
                     // if the position would conflict
                     let conflict = (0..self.entities.len()).find(|&ofs| self.entities[ofs].pos == position.clone().to_owned());
                     if let Some(tent) = conflict {
-                        output.push((id, vec![EntityThreadNews::LastTickEventFailed]));
+                        output.push((id, vec![EntityThreadNews::UpdateEntityData(vec![EntityDataMutation::LastTickEventFailed])]));
                     } else {
                         let updating = self.entities.iter_mut().find(|tent| tent.id == id).unwrap();
                         updating.last_pos = updating.pos.clone();

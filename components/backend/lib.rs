@@ -5,6 +5,7 @@ extern crate backend_traits;
 #[macro_use]
 extern crate common;
 extern crate rand;
+extern crate petgraph;
 
 pub mod storage_thread;
 pub mod entity_thread;

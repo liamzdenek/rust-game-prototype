@@ -44,6 +44,7 @@ impl EntityManager {
 
     fn start(&mut self) {
         let mut human = Human::new();
+        let mut last_tick_failed = false;
         loop {
             let val = self.rx.recv();
             match val.unwrap_or(EntityThreadMsg::Exit) {
@@ -54,15 +55,12 @@ impl EntityManager {
                         sender: sender,
                         already_sent: false,
                     });
+                    self.data.last_tick_failed = false;
                 },
                 EntityThreadMsg::News(many_news) => {
                     println!("entity thread got news: {:?}", many_news);
                     for news in many_news.into_iter() {
                         match news {
-                            EntityThreadNews::LastTickEventFailed => {
-                                // oops
-                                println!("last tick event failed");
-                            },
                             EntityThreadNews::UpdateEntityData(updates) => {
                                 self.data.apply(updates); 
                             },

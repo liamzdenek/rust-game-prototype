@@ -10,22 +10,27 @@ pub type EntityId = u64;
 
 #[derive(Debug)]
 pub enum EntityDataMutation {
+    LastTickEventFailed,
     UpdatePosition(Position),
 }
 
-#[derive(Debug,Eq,PartialEq,Hash,Clone)]
+#[derive(Debug,Eq,PartialEq,Hash,Clone,Default)]
 pub struct EntityData {
     pub id: EntityId,
     pub last_pos: Position,
     pub pos: Position,
     pub kind: String,
     pub data: String,
+    pub last_tick_failed: bool,
 }
 
 impl EntityData {
     pub fn apply(&mut self, changes: Vec<EntityDataMutation>) {
         for change in changes.into_iter() {
             match change {
+                EntityDataMutation::LastTickEventFailed => {
+                    self.last_tick_failed = true;
+                },
                 EntityDataMutation::UpdatePosition(position) => {
                     self.last_pos = self.pos.clone();
                     self.pos = position;
@@ -35,7 +40,7 @@ impl EntityData {
     }
 }
 
-#[derive(Debug,Eq,PartialEq,Hash,Clone)]
+#[derive(Debug,Eq,PartialEq,Hash,Clone,Default)]
 pub struct Position {
     pub x: i64,
     pub y: i64,
@@ -46,6 +51,22 @@ impl Position {
         self.x += x;
         self.y += y;
         self
+    }
+
+    pub fn neighbors(&self) -> Vec<(Position,usize)> {
+        vec![
+            // along axes
+            (self.clone().rel(-1,  0), 1),
+            (self.clone().rel( 1,  0), 1),
+            (self.clone().rel( 0, -1), 1),
+            (self.clone().rel( 0,  1), 1),
+
+            // diagonally
+            (self.clone().rel(-1, -1), 2),
+            (self.clone().rel(-1,  1), 2),
+            (self.clone().rel( 1, -1), 2),
+            (self.clone().rel( 1,  1), 2),
+        ]
     }
 }
 
