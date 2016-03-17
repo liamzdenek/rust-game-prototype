@@ -1,9 +1,9 @@
-use rand;
 use std::sync::mpsc::{channel,Sender,Receiver};
 use std::thread;
 use common::{EntityData,Position,EntityId,ChanError};
 use backend_traits::entity_thread::*;
 use backend_traits::environment_thread::Environment;
+use ai::EntityResponder;
 use ai::human::Human;
 
 pub trait EntityThreadFactory {
@@ -20,6 +20,7 @@ impl EntityThreadFactory for EntityThread {
         tx
     }
 }
+
 
 #[derive(Clone)]
 pub struct EntityContext {
@@ -42,27 +43,17 @@ impl EntityManager {
     }
 
     fn start(&mut self) {
+        let mut human = Human::new();
         loop {
             let val = self.rx.recv();
             match val.unwrap_or(EntityThreadMsg::Exit) {
                 EntityThreadMsg::Tick(sender) => {
-                    //println!("entity thread got tick");
-                    let x_is_neg = rand::random::<bool>();
-                    let y_is_neg = rand::random::<bool>();
-                    let x_is_one = rand::random::<bool>();
-                    let y_is_one = rand::random::<bool>();
-                    let mut true_x = 0;
-                    let mut true_y = 0;
-                    if x_is_one { true_x += 1; }
-                    if y_is_one { true_y += 1; }
-                    if x_is_neg { true_x = -true_x; }
-                    if y_is_neg { true_y = -true_y; }
-                    let newpos = self.data.pos.clone().rel(true_x, true_y);
-                    if newpos != self.data.pos {
-                        self.emit_update_pos(sender, newpos).unwrap();
-                    } else {
-                        self.emit_idle(sender).unwrap();
-                    }
+                    let id = self.data.id.clone();
+                    human.tick(&mut self.data, EntityResponder{
+                        id: id,
+                        sender: sender,
+                        already_sent: false,
+                    });
                 },
                 EntityThreadMsg::News(many_news) => {
                     println!("entity thread got news: {:?}", many_news);
@@ -83,24 +74,5 @@ impl EntityManager {
                 },
             }
         }
-    }
-
-    fn emit_update_pos(&mut self, sender: Sender<(EntityId, TickEvent)>, pos: Position) -> Result<()>{
-        try!(
-            sender.send((self.data.id, TickEvent::Move(pos)))
-                .map_err(|e| {
-                    ChanError::SendError("emit_update_pos")
-                })
-        );
-        Ok(())
-    }
-    fn emit_idle(&mut self, sender: Sender<(EntityId, TickEvent)>) -> Result<()>{
-        try!(
-            sender.send((self.data.id, TickEvent::Idle))
-                .map_err(|e| {
-                    ChanError::SendError("emit_idle")
-                })
-        );
-        Ok(())
     }
 }
