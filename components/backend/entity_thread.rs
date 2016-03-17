@@ -4,6 +4,7 @@ use std::thread;
 use common::{EntityData,Position,EntityId,ChanError};
 use backend_traits::entity_thread::*;
 use backend_traits::environment_thread::Environment;
+use ai::human::Human;
 
 pub trait EntityThreadFactory {
     fn new(EntityData, EntityContext) -> Self;

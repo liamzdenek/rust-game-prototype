@@ -1,10 +1,11 @@
 use super::*;
 use backend_traits::storage_thread::Storage;
 use backend_traits::environment_thread::Environment;
-use glium::glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
+use glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
 use imgui::ImGui;
 use glium::texture::{ClientFormat, RawImage2d};
+use glium;
 
 use std::borrow::Cow;
 
@@ -16,10 +17,9 @@ pub struct Vertex {
 
 implement_vertex!(Vertex, position, tex_coords);
 
-
 pub enum InputState {
     None,
-    Input((i32, i32), glium::glutin::ElementState, glium::glutin::MouseButton),
+    Input((i32, i32), ElementState, MouseButton),
     Panning,
 }
 
@@ -220,7 +220,7 @@ impl Renderer for Map {
                     )
                 },
                 DrawCmdKind::Entity(ent_id) => {
-                    let tex = &texcache.img_missing;
+                    let tex = &texcache.img_human;
                     (
                         &texcache.program,
                         uniform!{
@@ -239,7 +239,7 @@ impl Renderer for Map {
                 }*/
             };
 
-            frame.draw(&vertex_buffer, &indices, program, &uniform, &Default::default()).unwrap();
+            frame.draw(&vertex_buffer, &indices, program, &uniform, &texcache.draw_params).unwrap();
         }
 
         self.window_size = frame.get_dimensions(); 

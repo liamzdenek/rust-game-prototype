@@ -10,3 +10,5 @@ pub mod storage_thread;
 pub mod entity_thread;
 pub mod environment_thread;
 pub mod usage;
+
+pub mod ai;

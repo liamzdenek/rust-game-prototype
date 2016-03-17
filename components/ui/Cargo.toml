@@ -8,6 +8,7 @@ name = "ui"
 path = "lib.rs"
 
 [dependencies]
+glutin = "0.4"
 glium = "0.13"
 time = "0.1"
 image = "0.7"

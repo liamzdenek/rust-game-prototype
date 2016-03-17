@@ -6,6 +6,7 @@ extern crate backend_traits;
 extern crate imgui;
 #[macro_use]
 extern crate glium;
+extern crate glutin;
 extern crate time;
 extern crate image;
 
