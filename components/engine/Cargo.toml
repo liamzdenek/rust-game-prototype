@@ -13,11 +13,11 @@ path = "../ui"
 [dependencies.common]
 path = "../common"
 
-[dependencies.storage_traits]
-path = "../storage_traits"
+[dependencies.backend_traits]
+path = "../backend_traits"
 
-[dependencies.storage]
-path = "../storage"
+[dependencies.backend]
+path = "../backend"
 
 [dependencies.tick_traits]
 path = "../tick_traits"

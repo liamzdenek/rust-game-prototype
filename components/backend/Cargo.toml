@@ -1,10 +1,10 @@
 [package]
-name = "storage"
+name = "backend"
 version = "0.0.1"
 authors = [""]
 
 [lib]
-name = "storage"
+name = "backend"
 path = "lib.rs"
 
 [dependencies]
@@ -17,5 +17,5 @@ path = "../common"
 [dependencies.tick_traits]
 path = "../tick_traits"
 
-[dependencies.storage_traits]
-path = "../storage_traits"
+[dependencies.backend_traits]
+path = "../backend_traits"

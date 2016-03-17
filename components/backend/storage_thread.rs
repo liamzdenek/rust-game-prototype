@@ -1,4 +1,4 @@
-use storage_traits::storage_thread::{Storage,StorageThread,StorageThreadMsg,Result,Error};
+use backend_traits::storage_thread::{Storage,StorageThread,StorageThreadMsg,Result,Error};
 use std::sync::mpsc::{channel,Sender,Receiver};
 use std::thread;
 use std::collections::HashMap;
@@ -14,8 +14,8 @@ impl StorageThreadFactory for StorageThread {
     fn new() -> StorageThread {
         let (tx, rx) = channel();
         thread::Builder::new().name("StorageThread".to_string()).spawn(move || {
-            let storage = Box::new(MemoryStoragePrimitive::default());
-            StorageManager::new(rx, storage).start();
+            let backend = Box::new(MemoryStoragePrimitive::default());
+            StorageManager::new(rx, backend).start();
         });
 
         tx
@@ -131,17 +131,17 @@ impl StorageGridData {
 struct StorageManager {
     cell_size: (u64, u64),
     rx: Receiver<StorageThreadMsg>,
-    storage: Box<StoragePrimitive>,
+    backend: Box<StoragePrimitive>,
     loaded: Usage<GridKey, StorageGridData>,
     grid_factory: Box<GridFactory>
 }
 
 impl StorageManager {
-    fn new(rx: Receiver<StorageThreadMsg>, storage: Box<StoragePrimitive>) -> StorageManager {
+    fn new(rx: Receiver<StorageThreadMsg>, backend: Box<StoragePrimitive>) -> StorageManager {
         StorageManager{
             cell_size: (100, 100),
             rx: rx,
-            storage: storage,
+            backend: backend,
             loaded: Usage::new(1000),
             grid_factory: Box::new(DefaultMapFactory::new()),
         }
@@ -242,7 +242,7 @@ impl StorageManager {
 
     fn _load(&mut self, grid_key: GridKey) -> Result<StorageGridData> {
         let mut path = format!("map/x{}.y{}.json", grid_key.x, grid_key.y);
-        let raw_str = try!(self.storage.read(path));
+        let raw_str = try!(self.backend.read(path));
         json::decode(raw_str)
             .map_err(|e| Error::InternalParseError(format!("{}",e)))
     }

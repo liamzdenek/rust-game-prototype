@@ -19,5 +19,5 @@ path = "../common"
 [dependencies.tick_traits]
 path = "../tick_traits"
 
-[dependencies.storage_traits]
-path = "../storage_traits"
+[dependencies.backend_traits]
+path = "../backend_traits"

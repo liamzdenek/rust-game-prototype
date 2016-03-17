@@ -1,23 +1,23 @@
 use std::sync::mpsc::{channel,Sender,Receiver};
-use storage_traits::environment_thread::{EnvironmentThreadMsg,EnvironmentThread,Environment,LocalEntityData};
+use backend_traits::environment_thread::{EnvironmentThreadMsg,EnvironmentThread,Environment,LocalEntityData};
 //use super::storage_thread::Storage;
-use storage_traits::storage_thread::{Storage,StorageThreadMsg};
-use storage_traits::entity_thread::{Entity,TickEvent,EntityThreadNews};
+use backend_traits::storage_thread::{Storage,StorageThreadMsg};
+use backend_traits::entity_thread::{Entity,TickEvent,EntityThreadNews};
 use super::entity_thread::{EntityThreadFactory,EntityContext};
 use tick_traits::tick_thread::{Tick,TickClient,TickThreadEvent};
 use std::thread;
 use common::{EntityId,Position,EntityDataMutation};
 
 pub trait EnvironmentThreadFactory {
-    fn new(storage: Storage, tick: Tick) -> Self;
+    fn new(backend: Storage, tick: Tick) -> Self;
 }
 
 impl EnvironmentThreadFactory for EnvironmentThread {
-    fn new(storage: Storage, tick: Tick) -> EnvironmentThread {
+    fn new(backend: Storage, tick: Tick) -> EnvironmentThread {
         let (tx, rx) = channel();
         let env = Environment::new(tx.clone());
         thread::Builder::new().name("EnvironmentThread".to_string()).spawn(move || {
-            EnvironmentManager::new(rx, storage, tick, env).start();
+            EnvironmentManager::new(rx, backend, tick, env).start();
         });
 
         tx
@@ -65,15 +65,15 @@ pub struct EnvironmentManager {
     tick: Tick,
     tick_client: TickClient,
     tick_constraint: Sender<()>,
-    storage: Storage,
+    backend: Storage,
     state: EnvironmentState,
 }
 
 impl EnvironmentManager {
-    fn new(rx: Receiver<EnvironmentThreadMsg>, storage: Storage, tick: Tick, env: Environment) -> Self {
+    fn new(rx: Receiver<EnvironmentThreadMsg>, backend: Storage, tick: Tick, env: Environment) -> Self {
         EnvironmentManager{
             own_env: env,
-            storage: storage,
+            backend: backend,
             rx: rx,
             tick_client: tick.register().unwrap(),
             tick_constraint: tick.init_constraint().unwrap(),
@@ -86,7 +86,7 @@ impl EnvironmentManager {
         let ctx = EntityContext{
             environment: self.own_env.clone(),
         };
-        for ent in self.storage.get_all_entities().unwrap().into_iter() {
+        for ent in self.backend.get_all_entities().unwrap().into_iter() {
             println!("Entity: {:?}", ent); 
             let tent = Entity::new(EntityThreadFactory::new(ent.clone(), ctx.clone()));
             let ent_data = LocalEntityData{

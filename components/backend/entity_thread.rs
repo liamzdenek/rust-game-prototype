@@ -2,8 +2,8 @@ use rand;
 use std::sync::mpsc::{channel,Sender,Receiver};
 use std::thread;
 use common::{EntityData,Position,EntityId,ChanError};
-use storage_traits::entity_thread::*;
-use storage_traits::environment_thread::Environment;
+use backend_traits::entity_thread::*;
+use backend_traits::environment_thread::Environment;
 
 pub trait EntityThreadFactory {
     fn new(EntityData, EntityContext) -> Self;

@@ -1,6 +1,6 @@
 use super::*;
-use storage_traits::storage_thread::Storage;
-use storage_traits::environment_thread::Environment;
+use backend_traits::storage_thread::Storage;
+use backend_traits::environment_thread::Environment;
 use glium::glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
 use imgui::ImGui;
@@ -24,14 +24,14 @@ pub enum InputState {
 }
 
 pub struct MapBuilder {
-    storage: Storage,
+    backend: Storage,
     environment: Environment,
 }
 
 impl MapBuilder {
-    pub fn new(storage: Storage, environment: Environment) -> Self {
+    pub fn new(backend: Storage, environment: Environment) -> Self {
         MapBuilder{
-            storage: storage,
+            backend: backend,
             environment: environment,
         }
     }
@@ -40,7 +40,7 @@ impl MapBuilder {
 impl RendererBuilder for MapBuilder {
     type O = Map;
     fn build(&mut self, im_gui: &mut ImGui, display: &mut GlutinFacade) -> Map {
-        Map::new(im_gui, display, self.storage.clone(), self.environment.clone())
+        Map::new(im_gui, display, self.backend.clone(), self.environment.clone())
     }
 }
 
@@ -52,17 +52,17 @@ pub struct Map {
     px_tile_size: u32,
     window_size: (u32, u32),
    
-    storage: Storage,
+    backend: Storage,
     environment: Environment,
 }
 
 impl Map {
-    pub fn new<T>(im_gui: &mut ImGui, display: &T, storage: Storage, environment: Environment) -> Self
+    pub fn new<T>(im_gui: &mut ImGui, display: &T, backend: Storage, environment: Environment) -> Self
         where T: Facade
     {
         Map{
             viewport: Viewport::default(),
-            storage: storage,
+            backend: backend,
             environment: environment,
             
             mouse_state: InputState::None,
@@ -76,7 +76,7 @@ impl Map {
         let tile = self.viewport.get_tile_at_cursor(self.window_size, self.last_pos);
         println!("setting tile at: {:?}", tile);
         use common::Cell;
-        self.storage.set_cell(tile.into(), Cell{
+        self.backend.set_cell(tile.into(), Cell{
             terrain: 1,
             .. Cell::default()
         }).unwrap();
@@ -103,7 +103,7 @@ impl Renderer for Map {
         let mut cmds: Vec<DrawCmd> = vec![];
         //self.viewport.x += 0.1;
 
-        self.storage.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
+        self.backend.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
             for (t_pos, cell) in vec {
                 cell.and_then(|cell| {
                     let bounding_points = (
@@ -259,7 +259,7 @@ impl Renderer for Map {
                 }
                 Event::MouseMoved(pos) => {
                     let should_pan = if let InputState::Input(start_pos, ElementState::Pressed, MouseButton::Left) = self.mouse_state {
-                        if (start_pos.0 - self.last_pos.0).abs() + (start_pos.1 - self.last_pos.1).abs() > 5 {
+                        if (start_pos.0 - self.last_pos.0).abs() + (start_pos.1 - self.last_pos.1).abs() > 10 {
                             self.mouse_state = InputState::Panning;
                             true
                         } else {
