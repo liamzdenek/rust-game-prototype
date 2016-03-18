@@ -38,7 +38,7 @@ impl TimeControls {
 }
 
 impl ImguiRenderer for TimeControls {
-    fn render<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
+    fn render_ui<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
         let mut opened = true;
         ui.window(im_str!("Time"))
             .size((200.0, 50.0), ImGuiSetCond_FirstUseEver)

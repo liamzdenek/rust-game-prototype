@@ -1,13 +1,11 @@
 use super::*;
 use backend_traits::storage_thread::Storage;
-use backend_traits::environment_thread::Environment;
+use backend_traits::environment_thread::{Environment,LocalEntityData};
 use glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
-use imgui::ImGui;
+use imgui::*;
 use glium::texture::{ClientFormat, RawImage2d};
-use glium;
-
-use std::borrow::Cow;
+use glium::{VertexBuffer, index};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -51,7 +49,9 @@ pub struct Map {
     last_pos: (i32, i32),
     px_tile_size: u32,
     window_size: (u32, u32),
-   
+
+    focused: Option<LocalEntityData>,
+
     backend: Storage,
     environment: Environment,
 }
@@ -64,6 +64,8 @@ impl Map {
             viewport: Viewport::default(),
             backend: backend,
             environment: environment,
+
+            focused: None,
             
             mouse_state: InputState::None,
             px_tile_size: 0,
@@ -74,12 +76,55 @@ impl Map {
 
     pub fn on_click(&mut self) {
         let tile = self.viewport.get_tile_at_cursor(self.window_size, self.last_pos);
+        let entity = self.environment.get_entities_by_area(tile.clone().into(), tile.clone().into());
+
+        if entity.is_err() {
+            return;   
+        }
+        let entity = entity.unwrap().into_iter().nth(0);
+
+        // TODO: maybe remove this if?
+        if entity.is_none() {
+            return;
+        }
+        println!("entity: {:?}", entity);
+        self.focused = entity;
+        /*
         println!("setting tile at: {:?}", tile);
-        use common::Cell;
+        ue common::Cell;
         self.backend.set_cell(tile.into(), Cell{
             terrain: 1,
             .. Cell::default()
         }).unwrap();
+        */
+    }
+}
+
+impl ImguiRenderer for Map {
+    fn render_ui<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
+        {
+            let mut opened = true;
+            if let Some(focused) = self.focused.as_ref() {
+                let size = (380.0, 175.0);
+                let pos = (
+                    self.window_size.0 as f32 - size.0 - 10.0,
+                    self.window_size.1 as f32 - size.1 - 10.0,
+                );
+                ui.window(im_str!("Inspector"))
+                    .size((380.0,175.0), ImGuiSetCond_Always)
+                    .resizable(false)
+                    .movable(false)
+                    .position(pos, ImGuiSetCond_Always)
+                    .collapsible(false)
+                    .opened(&mut opened)
+                    .build(|| {
+                        ui.text_wrapped(im_str!("got focused: {:?}", focused)); 
+                    });
+            }
+            if !opened {
+                self.focused = None;
+            }
+        }
     }
 }
 
@@ -95,7 +140,7 @@ impl Renderer for Map {
             vertices: Vec<Vertex>,
         }
         
-        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        let indices = index::NoIndices(index::PrimitiveType::TrianglesList);
         let (px_tile_size, ogl_tile_size, ogl_tile_ofs, start_tile, end_tile, focused_tile) = self.viewport.get_render_info(frame.get_dimensions());
         
         self.px_tile_size = px_tile_size;
@@ -191,7 +236,7 @@ impl Renderer for Map {
 
 
         for v in cmds.into_iter() {
-            let vertex_buffer = glium::VertexBuffer::new(display, &v.vertices).unwrap();
+            let vertex_buffer = VertexBuffer::new(display, &v.vertices).unwrap();
             let (program, uniform) = match v.kind {
                 DrawCmdKind::Terrain(kind) => {
                     let tex = match kind {

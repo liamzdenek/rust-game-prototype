@@ -5,7 +5,7 @@ use glium::program;
 use glium::glutin;
 use glium::DisplayBuild;
 
-pub trait Renderer {
+pub trait Renderer: ImguiRenderer {
     fn render(&mut self, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame);
     fn handle_events(&mut self, events: Vec<Event>);
 }
@@ -20,11 +20,12 @@ pub struct ImguiRendererEntry {
 }
 
 pub trait ImguiRenderer {
-    fn render<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame);
+    fn render_ui<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame);
 }
 
 pub struct AppData {
-    pub background: Box<Renderer>
+    arbitrary: bool,
+    //pub background: Box<Renderer>
 }
 
 pub struct UI {
@@ -48,8 +49,9 @@ impl UI {
             .unwrap();
         let mut tex_cache = TexCache::new(&mut display);
         let mut support = Support::init(display);
+        let mut background = root.build(&mut support.imgui, &mut support.display);
         let mut app_data = AppData{
-            background: Box::new(root.build(&mut support.imgui, &mut support.display)),
+            arbitrary: true,
         };
         let mut open = true;
 
@@ -57,10 +59,12 @@ impl UI {
 
         'mainloop: loop {
             support.render(self.clear_color, |mut frame, mut display, ui| {
-                app_data.background.render(&mut tex_cache, display, frame);
-               
+                background.render(&mut tex_cache, display, frame);
+              
+                background.render_ui(ui, &mut app_data, &mut tex_cache, display, frame);
+
                 for window in windows.iter_mut() {
-                    window.renderer.render(ui, &mut app_data, &mut tex_cache, display, frame);
+                    window.renderer.render_ui(ui, &mut app_data, &mut tex_cache, display, frame);
                 }
                 /* 
                 ui.show_metrics_window(&mut open);
@@ -68,7 +72,7 @@ impl UI {
                 */
             });
             let (events, active) = support.update_events();
-            app_data.background.handle_events(events);
+            background.handle_events(events);
             if !active || !open {
                 break 'mainloop;
             }
