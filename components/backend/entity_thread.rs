@@ -57,10 +57,16 @@ impl EntityManager {
                     });
                     self.data.last_tick_failed = false;
                 },
+                EntityThreadMsg::GetArea(sender, start, end) => {
+                    human.get_memory().get_area(sender, start, end);
+                },
                 EntityThreadMsg::News(many_news) => {
-                    println!("entity thread got news: {:?}", many_news);
+                    //println!("entity thread got news: {:?}", many_news);
                     for news in many_news.into_iter() {
                         match news {
+                            EntityThreadNews::NewMapData(data) => {
+                                human.get_memory().push(data);
+                            },
                             EntityThreadNews::UpdateEntityData(updates) => {
                                 self.data.apply(updates); 
                             },

@@ -15,6 +15,10 @@ pub use glium::Surface;
 pub use glium::backend::Facade;
 pub use glium::backend::glutin_backend::GlutinFacade;
 pub use glium::Program;
+pub use imgui::*;
+
+pub mod inspector;
+pub use inspector::*;
 
 pub mod ui;
 pub use ui::*;

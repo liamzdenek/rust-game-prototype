@@ -3,10 +3,19 @@ use backend_traits::storage_thread::Storage;
 use backend_traits::environment_thread::{Environment,LocalEntityData};
 use glutin::{Event,ElementState,MouseButton,MouseScrollDelta};
 use std::collections::HashMap;
-use imgui::*;
 use glium::texture::{ClientFormat, RawImage2d};
 use glium::{VertexBuffer, index};
+use common::Position;
 
+#[derive(PartialEq)]
+enum DrawCmdKind {
+    Terrain(u64),
+    Entity(u64),
+}
+struct DrawCmd {
+    kind: DrawCmdKind,
+    vertices: Vec<Vertex>,
+}
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     position: [f32;2],
@@ -50,7 +59,8 @@ pub struct Map {
     px_tile_size: u32,
     window_size: (u32, u32),
 
-    focused: Option<LocalEntityData>,
+    inspector: Inspector,
+    //focused: Option<LocalEntityData>,
 
     backend: Storage,
     environment: Environment,
@@ -65,8 +75,8 @@ impl Map {
             backend: backend,
             environment: environment,
 
-            focused: None,
-            
+            inspector: Inspector::new(),
+
             mouse_state: InputState::None,
             px_tile_size: 0,
             last_pos: (0,0),
@@ -87,8 +97,8 @@ impl Map {
         if entity.is_none() {
             return;
         }
-        println!("entity: {:?}", entity);
-        self.focused = entity;
+        let entity = entity.unwrap();
+        self.inspector.focus = InspectorFocus::Entity(entity);
         /*
         println!("setting tile at: {:?}", tile);
         ue common::Cell;
@@ -98,47 +108,84 @@ impl Map {
         }).unwrap();
         */
     }
+
+    
+
+    fn render_bg(&mut self, cmds: &mut Vec<DrawCmd>, start_tile: Position, end_tile: Position, ogl_tile_size: (f32, f32), ogl_tile_ofs: (f32, f32), focused_tile: (i32, i32)) {
+        match self.inspector.focus {
+            InspectorFocus::Entity(ref entity) => {
+                entity.ent.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
+                    for (t_pos, cell) in vec {
+                        if cell.is_some() {
+                            let cell = cell.unwrap();
+                            render_tile(cmds, t_pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.terrain));
+                        }
+                    }
+                    Ok(())
+                }).unwrap();
+            },
+            _ => {
+                self.backend.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
+                    for (t_pos, cell) in vec {
+                        render_tile(cmds, t_pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.terrain));
+                    }
+                    Ok(())
+                }).unwrap();
+            },
+        }
+    }
 }
+
+fn render_tile(cmds: &mut Vec<DrawCmd>, t_pos: Position, focused_tile: (i32, i32), ogl_tile_size: (f32, f32), ogl_tile_ofs: (f32, f32), kind: DrawCmdKind) {
+    let bounding_points = (
+        (
+            (t_pos.x - focused_tile.0 as i64) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
+            (t_pos.y - focused_tile.1 as i64) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
+        ),
+        (
+            (t_pos.x - focused_tile.0 as i64 + 1) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
+            (t_pos.y - focused_tile.1 as i64 + 1) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
+        ),
+    );
+    let mut new_vert = vec![
+        // bottom left triangle
+        Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1], tex_coords: [0.0, 0.0] },
+        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
+        // top right triangle
+        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
+        Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1], tex_coords: [1.0, 1.0] },
+        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
+    ];
+
+    let mut was_found = false;
+    {
+        if let Some(v) = cmds.iter_mut().find(|v| v.kind == kind) {
+            v.vertices.append(&mut new_vert);
+            was_found = true;
+        }
+    }
+    if !was_found {
+        let v = DrawCmd{
+            kind: kind,
+            vertices: new_vert,
+        };
+        cmds.push(v);
+    }
+}
+
 
 impl ImguiRenderer for Map {
     fn render_ui<'ui>(&mut self, ui: &Ui<'ui>, app_data: &mut AppData, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
         {
-            let mut opened = true;
-            if let Some(focused) = self.focused.as_ref() {
-                let size = (380.0, 175.0);
-                let pos = (
-                    self.window_size.0 as f32 - size.0 - 10.0,
-                    self.window_size.1 as f32 - size.1 - 10.0,
-                );
-                ui.window(im_str!("Inspector"))
-                    .size((380.0,175.0), ImGuiSetCond_Always)
-                    .resizable(false)
-                    .movable(false)
-                    .position(pos, ImGuiSetCond_Always)
-                    .collapsible(false)
-                    .opened(&mut opened)
-                    .build(|| {
-                        ui.text_wrapped(im_str!("got focused: {:?}", focused)); 
-                    });
-            }
-            if !opened {
-                self.focused = None;
-            }
+           self.inspector.render_ui(ui, app_data, texcache, display, frame); 
         }
     }
 }
 
 impl Renderer for Map {
     fn render(&mut self, texcache: &mut TexCache, display: &mut GlutinFacade, frame: &mut Frame) {
-        #[derive(PartialEq)]
-        enum DrawCmdKind {
-            Terrain(u64),
-            Entity(u64),
-        }
-        struct DrawCmd {
-            kind: DrawCmdKind,
-            vertices: Vec<Vertex>,
-        }
+
         
         let indices = index::NoIndices(index::PrimitiveType::TrianglesList);
         let (px_tile_size, ogl_tile_size, ogl_tile_ofs, start_tile, end_tile, focused_tile) = self.viewport.get_render_info(frame.get_dimensions());
@@ -148,49 +195,7 @@ impl Renderer for Map {
         let mut cmds: Vec<DrawCmd> = vec![];
         //self.viewport.x += 0.1;
 
-        self.backend.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
-            for (t_pos, cell) in vec {
-                cell.and_then(|cell| {
-                    let bounding_points = (
-                        (
-                            (t_pos.x - focused_tile.0 as i64) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
-                            (t_pos.y - focused_tile.1 as i64) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
-                        ),
-                        (
-                            (t_pos.x - focused_tile.0 as i64 + 1) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
-                            (t_pos.y - focused_tile.1 as i64 + 1) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
-                        ),
-                    );
-                    let mut new_vert = vec![
-                        // bottom left triangle
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1], tex_coords: [0.0, 0.0] },
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
-                        // top right triangle
-                        Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1], tex_coords: [1.0, 1.0] },
-                        Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
-                    ];
-
-                    let mut was_found = false;
-                    {
-                        if let Some(v) = cmds.iter_mut().find(|v| v.kind == DrawCmdKind::Terrain(cell.terrain)) {
-                            v.vertices.append(&mut new_vert);
-                            was_found = true;
-                        }
-                    }
-                    if !was_found {
-                        let v = DrawCmd{
-                            kind: DrawCmdKind::Terrain(cell.terrain),
-                            vertices: new_vert,
-                        };
-                        cmds.push(v);
-                    }
-                    Ok(())
-                }).unwrap()
-            }
-            Ok(())
-        }).unwrap();
+        self.render_bg(&mut cmds, start_tile.clone().into(), end_tile.clone().into(), ogl_tile_size, ogl_tile_ofs, focused_tile);
 
         self.environment.get_entities_by_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
             for ent in vec {

@@ -27,7 +27,7 @@ impl From<ChanError> for Error {
 
 pub enum StorageThreadMsg {
     GetCell(Sender<Result<Cell>>, Position),
-    GetArea(Sender<Vec<(Position,Result<Cell>)>>, Position, Position),
+    GetArea(Sender<Vec<(Position,Cell)>>, Position, Position),
     SetCell(Sender<Result<()>>, Position, Cell),
     GetRawPosDataByPosition(Sender<Result<(GridKey,CellKey)>>, Position),
     GetAllEntities(Sender<Vec<EntityData>>),
@@ -46,7 +46,7 @@ impl Storage {
         }
     }
 
-    pub fn get_area(&self, pos_1: Position, pos_2: Position) -> Result<Vec<(Position, Result<Cell>)>> {
+    pub fn get_area(&self, pos_1: Position, pos_2: Position) -> Result<Vec<(Position, Cell)>> {
         Ok(try!(req_rep!(self.thread, StorageThreadMsg::GetArea => (pos_1, pos_2))))
     }
 

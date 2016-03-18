@@ -1,5 +1,4 @@
 use super::*;
-use imgui::*;
 use glium::glutin::Event;
 use glium::program;
 use glium::glutin;
@@ -36,7 +35,7 @@ pub struct UI {
 impl UI {
     pub fn new() -> Self {
         UI{
-            clear_color: (0.2, 0.2, 0.2, 1.0),
+            clear_color: (0.0, 0.0, 0.0, 1.0),
             windows: vec![],
         }
     }

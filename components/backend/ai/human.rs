@@ -90,4 +90,8 @@ impl Human {
             },
         }
     }
+
+    pub fn get_memory(&mut self) -> &mut MapMemory {
+        &mut self.map
+    }
 }

@@ -2,6 +2,7 @@ use common::{Position,Cell};
 use std::collections::HashMap;
 use petgraph::algo::dijkstra;
 use petgraph::visit::{Visitable,Graphlike,VisitMap};
+use std::sync::mpsc::Sender;
 
 struct MapGrid {
     data: HashMap<Position, Cell>,
@@ -18,6 +19,18 @@ impl MapGrid {
         dijkstra(self, origin, Some(target), |graph, pos| {
             pos.neighbors().into_iter()
         })
+    }
+
+    pub fn get_cell(&mut self, pos: &Position) -> Option<Cell> {
+        self.data.get(pos).and_then(|cell| {
+            Some(cell.to_owned())
+        })
+    }
+
+    pub fn push(&mut self, data: Vec<(Position, Cell)>) {
+        for (pos, cell) in data.into_iter() {
+            self.data.insert(pos, cell);
+        }
     }
 }
 
@@ -61,8 +74,27 @@ impl MapMemory {
             grid: MapGrid::new(),
         }
     }
+    pub fn push(&mut self, data: Vec<(Position, Cell)>) {
+        self.grid.push(data);
+        //println!("push data: {:?}", data);
+    }
     pub fn get_path(&mut self, origin: Position, target: Position) -> RoutingInstructions {
         RoutingInstructions::new(self.grid.get_path(origin, target.clone()), target)
+    }
+    pub fn get_area(&mut self, sender: Sender<Vec<(Position, Option<Cell>)>>, pos_1: Position, pos_2: Position) {
+        let size = ((pos_2.x - pos_1.x) * (pos_2.y - pos_1.y)) as usize;
+        //println!("area size: {:?}", size);
+        let mut ret = Vec::with_capacity(size);
+        for t_x in pos_1.x..pos_2.x {
+            for t_y in pos_1.y..pos_2.y {
+                let tpos = Position{ x: t_x, y: t_y };
+                ret.push((
+                    tpos.clone(),
+                    self.grid.get_cell(&tpos),
+                ));
+            }
+        }
+        sender.send(ret);
     }
 }
 

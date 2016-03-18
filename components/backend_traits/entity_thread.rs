@@ -1,7 +1,7 @@
 use std::sync::mpsc::{channel,Sender,Receiver};
 use super::environment_thread::Environment;
 use std::result;
-use common::{EntityId,Position,ChanError,EntityDataMutation};
+use common::{EntityId,Position,ChanError,EntityDataMutation,Cell};
 
 pub type Result<T> = result::Result<T, Error>;
 pub type EntityThread = Sender<EntityThreadMsg>;
@@ -26,12 +26,14 @@ impl From<ChanError> for Error {
 pub enum EntityThreadMsg {
     Tick(Sender<(EntityId, TickEvent)>),
     News(Vec<EntityThreadNews>),
+    GetArea(Sender<Vec<(Position,Option<Cell>)>>, Position, Position),
     Exit,
 }
 
 #[derive(Debug)]
 pub enum EntityThreadNews {
     UpdateEntityData(Vec<EntityDataMutation>),
+    NewMapData(Vec<(Position,Cell)>),
 }
 
 #[derive(Debug)]
@@ -58,5 +60,9 @@ impl Entity {
     pub fn news(&self, news: Vec<EntityThreadNews>) -> Result<()> {
         try!(send!(self.tx, EntityThreadMsg::News => (news)));
         Ok(())
+    }
+
+    pub fn get_area(&self, start: Position, end: Position) -> Result<Vec<(Position,Option<Cell>)>> {
+        Ok(try!(req_rep!(self.tx, EntityThreadMsg::GetArea => (start, end))))
     }
 }

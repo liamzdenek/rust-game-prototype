@@ -30,7 +30,7 @@ pub struct EnvironmentState {
 }
 
 impl EnvironmentState {
-    fn apply_tick_events(&mut self, all_events: Vec<(EntityId, TickEvent)>) -> Vec<(EntityId, Vec<EntityThreadNews>)> {
+    fn apply_tick_events(&mut self, storage: Storage, all_events: Vec<(EntityId, TickEvent)>) -> Vec<(EntityId, Vec<EntityThreadNews>)> {
         //println!("applying events: {:?}", all_events);
         let mut output = vec![];
         for (id,event) in all_events.into_iter() {
@@ -46,9 +46,10 @@ impl EnvironmentState {
                         updating.last_pos = updating.pos.clone();
                         updating.pos = position.clone().to_owned();
                         output.push((id, vec![
+                            EntityThreadNews::NewMapData(storage.get_area(position.clone().rel(-5,-5), position.clone().rel(5,5)).unwrap_or(vec![])),
                             EntityThreadNews::UpdateEntityData(vec![
                                 EntityDataMutation::UpdatePosition(position.clone().to_owned())
-                            ])
+                            ]),
                         ]));
                     }
                 }
@@ -135,7 +136,7 @@ impl EnvironmentManager {
             ); 
         }
 
-        let updates = self.state.apply_tick_events(all_events);
+        let updates = self.state.apply_tick_events(self.backend.clone(), all_events);
 
         self.deliver_updates(updates);
 
