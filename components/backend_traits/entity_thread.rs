@@ -23,10 +23,16 @@ impl From<ChanError> for Error {
     }
 }
 
+pub struct EntityThreadArea {
+    pub pos: Position,
+    pub cell: Cell,
+    pub is_from_memory: bool,
+}
+
 pub enum EntityThreadMsg {
     Tick(Sender<(EntityId, TickEvent)>),
     News(Vec<EntityThreadNews>),
-    GetArea(Sender<Vec<(Position,Option<Cell>)>>, Position, Position),
+    GetArea(Sender<Vec<EntityThreadArea>>, Position, Position),
     Exit,
 }
 
@@ -62,7 +68,7 @@ impl Entity {
         Ok(())
     }
 
-    pub fn get_area(&self, start: Position, end: Position) -> Result<Vec<(Position,Option<Cell>)>> {
+    pub fn get_area(&self, start: Position, end: Position) -> Result<Vec<EntityThreadArea>> {
         Ok(try!(req_rep!(self.tx, EntityThreadMsg::GetArea => (start, end))))
     }
 }

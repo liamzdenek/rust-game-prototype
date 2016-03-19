@@ -51,9 +51,11 @@ impl<'a> TexCache<'a> {
             out vec4 color;
 
             uniform sampler2D tex;
+            uniform vec4 coloroverlay;
 
             void main() {
                 color = texture(tex, v_tex_coords);
+                color = coloroverlay * color;
             }
         "#;
 

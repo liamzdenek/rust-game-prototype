@@ -1,4 +1,5 @@
 use common::{Position,Cell};
+use backend_traits::entity_thread::EntityThreadArea;
 use std::collections::HashMap;
 use petgraph::algo::dijkstra;
 use petgraph::visit::{Visitable,Graphlike,VisitMap};
@@ -65,33 +66,39 @@ impl VisitMap<Position> for MapVisitMap {
 }
 
 pub struct MapMemory {
-    grid: MapGrid, 
+    grid: MapGrid,
+    latest_push: Vec<(Position, Cell)>,
 }
 
 impl MapMemory {
     pub fn new() -> Self {
         MapMemory{
             grid: MapGrid::new(),
+            latest_push: vec![],
         }
     }
     pub fn push(&mut self, data: Vec<(Position, Cell)>) {
+        self.latest_push = data.clone();
         self.grid.push(data);
         //println!("push data: {:?}", data);
     }
     pub fn get_path(&mut self, origin: Position, target: Position) -> RoutingInstructions {
         RoutingInstructions::new(self.grid.get_path(origin, target.clone()), target)
     }
-    pub fn get_area(&mut self, sender: Sender<Vec<(Position, Option<Cell>)>>, pos_1: Position, pos_2: Position) {
+    pub fn get_area(&mut self, sender: Sender<Vec<EntityThreadArea>>, pos_1: Position, pos_2: Position) {
         let size = ((pos_2.x - pos_1.x) * (pos_2.y - pos_1.y)) as usize;
         //println!("area size: {:?}", size);
         let mut ret = Vec::with_capacity(size);
         for t_x in pos_1.x..pos_2.x {
             for t_y in pos_1.y..pos_2.y {
                 let tpos = Position{ x: t_x, y: t_y };
-                ret.push((
-                    tpos.clone(),
-                    self.grid.get_cell(&tpos),
-                ));
+                if let Some(cell) = self.grid.get_cell(&tpos).clone() {
+                    ret.push(EntityThreadArea{
+                        pos: tpos.clone(),
+                        cell: cell,
+                        is_from_memory: self.latest_push.iter().find(|&&(ref pos, _)| pos == &tpos).is_none(),
+                    });
+                }
             }
         }
         sender.send(ret);

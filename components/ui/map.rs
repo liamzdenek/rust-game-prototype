@@ -9,8 +9,8 @@ use common::Position;
 
 #[derive(PartialEq)]
 enum DrawCmdKind {
-    Terrain(u64),
-    Entity(u64),
+    Terrain(u64, bool), // bool = is_gray
+    Entity(u64, bool), // bool = is_gray
 }
 struct DrawCmd {
     kind: DrawCmdKind,
@@ -115,11 +115,8 @@ impl Map {
         match self.inspector.focus {
             InspectorFocus::Entity(ref entity) => {
                 entity.ent.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
-                    for (t_pos, cell) in vec {
-                        if cell.is_some() {
-                            let cell = cell.unwrap();
-                            render_tile(cmds, t_pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.terrain));
-                        }
+                    for cell in vec {
+                        render_tile(cmds, cell.pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.cell.terrain, cell.is_from_memory));
                     }
                     Ok(())
                 }).unwrap();
@@ -127,7 +124,7 @@ impl Map {
             _ => {
                 self.backend.get_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
                     for (t_pos, cell) in vec {
-                        render_tile(cmds, t_pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.terrain));
+                        render_tile(cmds, t_pos, focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Terrain(cell.terrain, false));
                     }
                     Ok(())
                 }).unwrap();
@@ -199,41 +196,7 @@ impl Renderer for Map {
 
         self.environment.get_entities_by_area(start_tile.clone().into(), end_tile.clone().into()).and_then(|vec| {
             for ent in vec {
-                let bounding_points = (
-                    (
-                        (ent.pos.x - focused_tile.0 as i64) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
-                        (ent.pos.y - focused_tile.1 as i64) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
-                    ),
-                    (
-                        (ent.pos.x - focused_tile.0 as i64 + 1) as f32 * ogl_tile_size.0 - ogl_tile_ofs.0,
-                        (ent.pos.y - focused_tile.1 as i64 + 1) as f32 * ogl_tile_size.1 - ogl_tile_ofs.1,
-                    ),
-                );
-                let mut new_vert = vec![
-                    // bottom left triangle
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.0).1], tex_coords: [0.0, 0.0] },
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
-                    // top right triangle
-                    Vertex{ position: [ (bounding_points.0).0, (bounding_points.1).1], tex_coords: [0.0, 1.0] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.1).1], tex_coords: [1.0, 1.0] },
-                    Vertex{ position: [ (bounding_points.1).0, (bounding_points.0).1], tex_coords: [1.0, 0.0] },
-                ];
-
-                let mut was_found = false;
-                {
-                    if let Some(v) = cmds.iter_mut().find(|v| v.kind == DrawCmdKind::Entity(ent.id)) {
-                        v.vertices.append(&mut new_vert);
-                        was_found = true;
-                    }
-                }
-                if !was_found {
-                    let v = DrawCmd{
-                        kind: DrawCmdKind::Entity(ent.id),
-                        vertices: new_vert,
-                    };
-                    cmds.push(v);
-                }
+                render_tile(&mut cmds, ent.pos.clone().into(), focused_tile, ogl_tile_size, ogl_tile_ofs, DrawCmdKind::Entity(ent.id, false));
             }
             Ok(())
         }).unwrap();
@@ -243,7 +206,7 @@ impl Renderer for Map {
         for v in cmds.into_iter() {
             let vertex_buffer = VertexBuffer::new(display, &v.vertices).unwrap();
             let (program, uniform) = match v.kind {
-                DrawCmdKind::Terrain(kind) => {
+                DrawCmdKind::Terrain(kind, is_gray) => {
                     let tex = match kind {
                         0 => {
                             &texcache.img_gravel
@@ -255,7 +218,13 @@ impl Renderer for Map {
                             &texcache.img_missing
                         },
                     };
-                    
+          
+                    let coloroverlay = if is_gray {
+                        [0.5, 0.5, 0.5, 0.5f32]
+                    } else {
+                        [1.0, 1.0, 1.0, 1.0f32] 
+                    };
+
                     (
                         &texcache.program,
                         uniform!{
@@ -266,11 +235,19 @@ impl Renderer for Map {
                                 [0.0,  0.0,  0.0,  1.0f32],
                             ],
                             tex: tex,
+                            coloroverlay: coloroverlay,
                         }
                     )
                 },
-                DrawCmdKind::Entity(ent_id) => {
+                DrawCmdKind::Entity(ent_id, is_gray) => {
                     let tex = &texcache.img_human;
+          
+                    let coloroverlay = if is_gray {
+                        [0.5, 0.5, 0.5, 1.0f32]
+                    } else {
+                        [1.0, 1.0, 1.0, 1.0f32] 
+                    };
+
                     (
                         &texcache.program,
                         uniform!{
@@ -281,6 +258,7 @@ impl Renderer for Map {
                                 [0.0,  0.0,  0.0,  1.0f32],
                             ],
                             tex: tex,
+                            coloroverlay: coloroverlay,
                         }
                     )
                 }

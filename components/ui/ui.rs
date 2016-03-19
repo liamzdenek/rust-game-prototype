@@ -35,7 +35,7 @@ pub struct UI {
 impl UI {
     pub fn new() -> Self {
         UI{
-            clear_color: (0.0, 0.0, 0.0, 1.0),
+            clear_color: (0.1, 0.1, 0.1, 1.0),
             windows: vec![],
         }
     }

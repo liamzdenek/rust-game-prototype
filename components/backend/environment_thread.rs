@@ -46,7 +46,7 @@ impl EnvironmentState {
                         updating.last_pos = updating.pos.clone();
                         updating.pos = position.clone().to_owned();
                         output.push((id, vec![
-                            EntityThreadNews::NewMapData(storage.get_area(position.clone().rel(-5,-5), position.clone().rel(5,5)).unwrap_or(vec![])),
+                            EntityThreadNews::NewMapData(storage.get_area(position.clone().rel(-5,-5), position.clone().rel(5+1,5+1)).unwrap_or(vec![])),
                             EntityThreadNews::UpdateEntityData(vec![
                                 EntityDataMutation::UpdatePosition(position.clone().to_owned())
                             ]),
